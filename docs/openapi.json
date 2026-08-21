@@ -1,0 +1,1753 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Winthor + iSA API | Riograndense",
+    "description": "## API desenvolvida com a finalidade de atender o sistema de e-commerce da Rio Grandense, baseado no banco de dados do ERP WinThor da TOTVS.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Catálogos"
+        ],
+        "summary": "Home",
+        "operationId": "home__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/catalog": {
+      "get": {
+        "tags": [
+          "Catálogos"
+        ],
+        "summary": "Catalog",
+        "description": "Traz um catálogo com imagens do iSA. Não retorna preço e produtos sem estoque",
+        "operationId": "catalog_catalog_get",
+        "parameters": [
+          {
+            "name": "codepto",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Codepto"
+            }
+          },
+          {
+            "name": "codsec",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Codsec"
+            }
+          },
+          {
+            "name": "busca",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Busca"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 32,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/departments/": {
+      "get": {
+        "tags": [
+          "Departamentos"
+        ],
+        "summary": "Departments",
+        "description": "Retorna departamentos paginados, excluindo os registros especiais.",
+        "operationId": "departments_departments__get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/departments/{id}/categories": {
+      "get": {
+        "tags": [
+          "Departamentos"
+        ],
+        "summary": "Cat Per Departments",
+        "description": "Retorna categorias paginadas do departamento informado.",
+        "operationId": "cat_per_departments_departments__id__categories_get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/product/random": {
+      "get": {
+        "tags": [
+          "Produtos"
+        ],
+        "summary": "Random Product",
+        "operationId": "random_product_product_random_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/channel/mail": {
+      "post": {
+        "tags": [
+          "Comunicação"
+        ],
+        "summary": "Send Mail",
+        "operationId": "send_mail_channel_mail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "operationId": "login_auth_login_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Read Users Me",
+        "operationId": "read_users_me_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/clients/": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "List Clients",
+        "description": "Retorna lista de clientes cadastrados no WinThor com busca e paginação.",
+        "operationId": "list_clients_clients__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca por nome ou código do cliente",
+              "title": "Search"
+            },
+            "description": "Busca por nome ou código do cliente"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClienteResponse"
+                  },
+                  "title": "Response List Clients Clients  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clients/{codcli}": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Get Client",
+        "description": "Retorna os dados de um cliente específico pelo código.",
+        "operationId": "get_client_clients__codcli__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "codcli",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Codcli"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clients/{codcli}/prestacoes": {
+      "get": {
+        "tags": [
+          "Clientes"
+        ],
+        "summary": "Get Client Prestacoes",
+        "description": "Retorna os dados do cliente junto com suas prestações (contas a receber).",
+        "operationId": "get_client_prestacoes_clients__codcli__prestacoes_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "codcli",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Codcli"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClienteComPrestacoes"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prestacoes/": {
+      "get": {
+        "tags": [
+          "Prestações"
+        ],
+        "summary": "List Prestacoes",
+        "description": "Retorna prestações paginadas no intervalo de vencimento solicitado.",
+        "operationId": "list_prestacoes_prestacoes__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "codcli",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por código do cliente",
+              "title": "Codcli"
+            },
+            "description": "Filtrar por código do cliente"
+          },
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por código da filial",
+              "title": "Codfilial"
+            },
+            "description": "Filtrar por código da filial"
+          },
+          {
+            "name": "dias_passados",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 0,
+              "description": "Dias anteriores ao vencimento a considerar",
+              "default": 30,
+              "title": "Dias Passados"
+            },
+            "description": "Dias anteriores ao vencimento a considerar"
+          },
+          {
+            "name": "dias_futuros",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 0,
+              "description": "Dias futuros ao vencimento a considerar",
+              "default": 30,
+              "title": "Dias Futuros"
+            },
+            "description": "Dias futuros ao vencimento a considerar"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca por nome do cliente ou número da duplicata (parcial, case-insensitive)",
+              "title": "Search"
+            },
+            "description": "Busca por nome do cliente ou número da duplicata (parcial, case-insensitive)"
+          },
+          {
+            "name": "codusur",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por código do vendedor",
+              "title": "Codusur"
+            },
+            "description": "Filtrar por código do vendedor"
+          },
+          {
+            "name": "venc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por data de vencimento (DD/MM/AAAA)",
+              "title": "Venc"
+            },
+            "description": "Filtrar por data de vencimento (DD/MM/AAAA)"
+          },
+          {
+            "name": "emissao",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por data de emissão (DD/MM/AAAA)",
+              "title": "Emissao"
+            },
+            "description": "Filtrar por data de emissão (DD/MM/AAAA)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrestacaoResponse"
+                  },
+                  "title": "Response List Prestacoes Prestacoes  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prestacoes/vencidas": {
+      "get": {
+        "tags": [
+          "Prestações"
+        ],
+        "summary": "List Prestacoes Vencidas",
+        "description": "Retorna prestações em aberto vencidas nos últimos N dias.",
+        "operationId": "list_prestacoes_vencidas_prestacoes_vencidas_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "dias",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "Dias anteriores a considerar",
+              "default": 30,
+              "title": "Dias"
+            },
+            "description": "Dias anteriores a considerar"
+          },
+          {
+            "name": "codcli",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por código do cliente",
+              "title": "Codcli"
+            },
+            "description": "Filtrar por código do cliente"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrestacaoResponse"
+                  },
+                  "title": "Response List Prestacoes Vencidas Prestacoes Vencidas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prestacoes/a-vencer": {
+      "get": {
+        "tags": [
+          "Prestações"
+        ],
+        "summary": "List Prestacoes A Vencer",
+        "description": "Retorna prestações em aberto que vencem nos próximos N dias.",
+        "operationId": "list_prestacoes_a_vencer_prestacoes_a_vencer_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "dias",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "Número de dias futuros a considerar",
+              "default": 30,
+              "title": "Dias"
+            },
+            "description": "Número de dias futuros a considerar"
+          },
+          {
+            "name": "codcli",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por código do cliente",
+              "title": "Codcli"
+            },
+            "description": "Filtrar por código do cliente"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrestacaoResponse"
+                  },
+                  "title": "Response List Prestacoes A Vencer Prestacoes A Vencer Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prestacoes/a-vencer/por-dia": {
+      "get": {
+        "tags": [
+          "Prestações"
+        ],
+        "summary": "List Prestacoes A Vencer Por Dia",
+        "description": "Retorna o total a receber e a quantidade de prestações agrupados por data de vencimento.\n\nInclui todos os dias do intervalo, mesmo aqueles sem vencimentos (total=0, quantidade=0).\nMuito mais eficiente que paginar /a-vencer e somar no cliente.",
+        "operationId": "list_prestacoes_a_vencer_por_dia_prestacoes_a_vencer_por_dia_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "dias",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "Número de dias futuros (máx. 365)",
+              "default": 30,
+              "title": "Dias"
+            },
+            "description": "Número de dias futuros (máx. 365)"
+          },
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por filial (opcional)",
+              "title": "Codfilial"
+            },
+            "description": "Filtrar por filial (opcional)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PrestacaoPorDiaResponse"
+                  },
+                  "title": "Response List Prestacoes A Vencer Por Dia Prestacoes A Vencer Por Dia Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/prestacoes/{duplic}/observacao": {
+      "patch": {
+        "tags": [
+          "Prestações"
+        ],
+        "summary": "Update Prestacao Observacao",
+        "description": "Cria ou atualiza a observação UOL de uma prestação existente.",
+        "operationId": "update_prestacao_observacao_prestacoes__duplic__observacao_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "duplic",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Duplic"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrestacaoObservacaoUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrestacaoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/": {
+      "get": {
+        "tags": [
+          "Usuários - Winthor"
+        ],
+        "summary": "Get All Users",
+        "operationId": "get_all_users_user__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "codusur",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Codusur"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UsuarioResponse"
+                  },
+                  "title": "Response Get All Users User  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ClienteComPrestacoes": {
+        "properties": {
+          "CODCLI": {
+            "type": "integer",
+            "title": "Codcli"
+          },
+          "CLIENTE": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente"
+          },
+          "CGCENT": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cgcent"
+          },
+          "ENDERENT": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enderent"
+          },
+          "MUNICENT": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municent"
+          },
+          "TELENT": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telent"
+          },
+          "LIMCRED": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limcred"
+          },
+          "IEENT": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ieent"
+          },
+          "OBS": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Obs"
+          },
+          "prestacoes": {
+            "items": {
+              "$ref": "#/components/schemas/PrestacaoResponse"
+            },
+            "type": "array",
+            "title": "Prestacoes",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "CODCLI"
+        ],
+        "title": "ClienteComPrestacoes"
+      },
+      "ClienteResponse": {
+        "properties": {
+          "CODCLI": {
+            "type": "integer",
+            "title": "Codcli"
+          },
+          "CLIENTE": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente"
+          },
+          "CGCENT": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cgcent"
+          },
+          "ENDERENT": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enderent"
+          },
+          "MUNICENT": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municent"
+          },
+          "TELENT": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telent"
+          },
+          "LIMCRED": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limcred"
+          },
+          "IEENT": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ieent"
+          },
+          "OBS": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Obs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "CODCLI"
+        ],
+        "title": "ClienteResponse"
+      },
+      "ContactForm": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Nome"
+          },
+          "empresa": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Empresa"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "mensagem": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 10,
+            "title": "Mensagem"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "email",
+          "mensagem"
+        ],
+        "title": "ContactForm"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PrestacaoObservacaoUpdate": {
+        "properties": {
+          "observacao": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Observacao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observacao"
+        ],
+        "title": "PrestacaoObservacaoUpdate"
+      },
+      "PrestacaoPorDiaResponse": {
+        "properties": {
+          "DTVENC": {
+            "type": "string",
+            "format": "date",
+            "title": "Dtvenc"
+          },
+          "total": {
+            "type": "number",
+            "title": "Total"
+          },
+          "quantidade": {
+            "type": "integer",
+            "title": "Quantidade"
+          }
+        },
+        "type": "object",
+        "required": [
+          "DTVENC",
+          "total",
+          "quantidade"
+        ],
+        "title": "PrestacaoPorDiaResponse"
+      },
+      "PrestacaoResponse": {
+        "properties": {
+          "DUPLIC": {
+            "type": "integer",
+            "title": "Duplic"
+          },
+          "CODCLI": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codcli"
+          },
+          "CLIENTE": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cliente"
+          },
+          "VALOR": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          },
+          "DTVENC": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtvenc"
+          },
+          "DTEMISSAO": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtemissao"
+          },
+          "DTBAIXA": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dtbaixa"
+          },
+          "CODCOB": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codcob"
+          },
+          "CODFILIAL": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codfilial"
+          },
+          "CODUSUR": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codusur"
+          },
+          "OBS": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Obs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "DUPLIC"
+        ],
+        "title": "PrestacaoResponse"
+      },
+      "UserResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "usuario": {
+            "type": "string",
+            "title": "Usuario"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario"
+        ],
+        "title": "UserResponse"
+      },
+      "UsuarioResponse": {
+        "properties": {
+          "CODUSUR": {
+            "type": "integer",
+            "title": "Codusur"
+          },
+          "NOME": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          }
+        },
+        "type": "object",
+        "required": [
+          "CODUSUR"
+        ],
+        "title": "UsuarioResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {
+
+            },
+            "tokenUrl": "/auth/login"
+          }
+        }
+      }
+    }
+  }
+}
