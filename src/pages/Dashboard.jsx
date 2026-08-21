@@ -130,11 +130,11 @@ export default function Dashboard() {
         const timer = setTimeout(async () => {
             setPrestacoesLoading(true);
             try {
-                // O backend espera datas no formato DD/MM/AAAA (ex: 15/03/2025)
+                // O backend espera datas no formato AAAA-MM-DD (ex: 2025-03-15)
                 const toApiDate = (iso) => {
                     if (!iso) return null;
                     const [y, m, d] = iso.split('-');
-                    return d && m && y ? `${d}/${m}/${y}` : null;
+                    return y && m && d ? `${y}-${m}-${d}` : null;
                 };
                 const result = await apiService.listPrestacoes({
                     dias_passados: 30,
