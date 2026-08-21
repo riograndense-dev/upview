@@ -437,7 +437,7 @@ export default function Dashboard() {
                                     aria-label="Filtrar por data de emissão"
                                     title="Filtrar por data de emissão"
                                     onChange={(event) => { setPrestacaoEmissao(event.target.value); setPrestacoesPage(1); }}
-                                    className="border-2 border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-slate-900 bg-white px-2.5 py-2"
+                                    className="border-2 border-green-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-slate-900 bg-white px-2.5 py-2"
                                 />
                                 <input
                                     type="date"
@@ -445,7 +445,7 @@ export default function Dashboard() {
                                     aria-label="Filtrar por data de vencimento"
                                     title="Filtrar por data de vencimento"
                                     onChange={(event) => { setPrestacaoVenc(event.target.value); setPrestacoesPage(1); }}
-                                    className="border-2 border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-slate-900 bg-white px-2.5 py-2"
+                                    className="border-2 border-red-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-slate-900 bg-white px-2.5 py-2"
                                 />
                                 {(prestacaoEmissao || prestacaoVenc) && (
                                     <button
