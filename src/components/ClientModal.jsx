@@ -205,6 +205,7 @@ export default function ClientModal({ isOpen, onClose, client, onPrestacaoClick 
                                             <th className="px-4 py-2 font-semibold">Duplicata</th>
                                             <th className="px-4 py-2 font-semibold">Valor</th>
                                             <th className="px-4 py-2 font-semibold">Vencimento</th>
+                                            <th className="px-4 py-2 font-semibold">Cód. cobrança</th>
                                             <th className="px-4 py-2 font-semibold">Status</th>
                                         </tr>
                                     </thead>
@@ -221,6 +222,7 @@ export default function ClientModal({ isOpen, onClose, client, onPrestacaoClick 
                                                     <td className="px-4 py-2 text-slate-700">{p.DUPLIC}</td>
                                                     <td className="px-4 py-2 font-medium text-slate-800">{formatCurrency(p.VALOR)}</td>
                                                     <td className="px-4 py-2 text-slate-700">{formatDate(p.DTVENC)}</td>
+                                                    <td className="px-4 py-2 text-slate-700">{p.CODCOB || '—'}</td>
                                                     <td className="px-4 py-2">
                                                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[s]}`}>{s}</span>
                                                     </td>

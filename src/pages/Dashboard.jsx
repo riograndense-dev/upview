@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, BarChart3, DollarSign, FileText, LogOut, Pencil, UserCheck, Users } from 'lucide-react';
+import { AlertCircle, ArrowDownWideNarrow, ArrowUpNarrowWide, BarChart3, CalendarX, DollarSign, FileText, LogOut, Pencil, UserCheck, Users } from 'lucide-react';
 
 import * as apiService from '../api/apiService';
 import { BarChartVencimentos, PieChartStatus } from '../components/Charts';
@@ -19,6 +19,15 @@ function getStatus(prestacao) {
     if (prestacao.DTBAIXA) return 'Pago';
     if (prestacao.DTVENC && new Date(`${prestacao.DTVENC.slice(0, 10)}T12:00:00`) < new Date(new Date().setHours(0, 0, 0, 0))) return 'Vencido';
     return 'A vencer';
+}
+
+// Dias de atraso de uma prestação (0 para não vencidas ou sem data de vencimento)
+function diasAtraso(prestacao) {
+    if (!prestacao?.DTVENC) return 0;
+    const hoje = new Date(new Date().setHours(0, 0, 0, 0));
+    const vencimento = new Date(`${prestacao.DTVENC.slice(0, 10)}T12:00:00`);
+    const atraso = Math.round((hoje - vencimento) / 86400000);
+    return atraso > 0 ? atraso : 0;
 }
 
 export default function Dashboard() {
@@ -49,6 +58,8 @@ export default function Dashboard() {
     const [prestacaoSearch, setPrestacaoSearch] = useState('');
     const [prestacaoEmissao, setPrestacaoEmissao] = useState('');
     const [prestacaoVenc, setPrestacaoVenc] = useState('');
+    // Filtro de prestações vencidas: '' (desligado) | 'mais-vencidas' | 'menos-vencidas'
+    const [prestacaoVencidas, setPrestacaoVencidas] = useState('');
     const [selectedPrestacao, setSelectedPrestacao] = useState(null);
 
     // Vendedores
@@ -136,17 +147,35 @@ export default function Dashboard() {
                     const [y, m, d] = iso.split('-');
                     return y && m && d ? `${y}-${m}-${d}` : null;
                 };
+                // Filtro de vencidas ativo → busca o lote completo (até 200) e
+                // ordena/pagina no cliente, pois a API não expõe ordenação.
+                const vencidasAtivo = prestacaoVencidas !== '';
+
                 const result = await apiService.listPrestacoes({
                     dias_passados: 30,
-                    dias_futuros: 30,
+                    dias_futuros: vencidasAtivo ? 0 : 30,
                     search: prestacaoSearch,
                     emissao: toApiDate(prestacaoEmissao),
                     venc: toApiDate(prestacaoVenc),
-                    limit: PAGE_SIZE + 1,
-                    offset: (prestacoesPage - 1) * PAGE_SIZE,
+                    ...(vencidasAtivo
+                        ? { limit: 200 }
+                        : { limit: PAGE_SIZE + 1, offset: (prestacoesPage - 1) * PAGE_SIZE }),
                 }, { signal: controller.signal });
-                setPrestacoes(result.slice(0, PAGE_SIZE));
-                setPrestacoesHasNext(result.length > PAGE_SIZE);
+
+                if (vencidasAtivo) {
+                    // Mantém apenas as vencidas em aberto e ordena por dias de atraso
+                    const vencidas = (Array.isArray(result) ? result : []).filter((p) => !p.DTBAIXA && diasAtraso(p) > 0);
+                    vencidas.sort((a, b) =>
+                        prestacaoVencidas === 'mais-vencidas'
+                            ? diasAtraso(b) - diasAtraso(a)
+                            : diasAtraso(a) - diasAtraso(b)
+                    );
+                    setPrestacoes(vencidas.slice((prestacoesPage - 1) * PAGE_SIZE, prestacoesPage * PAGE_SIZE));
+                    setPrestacoesHasNext(vencidas.length > prestacoesPage * PAGE_SIZE);
+                } else {
+                    setPrestacoes(result.slice(0, PAGE_SIZE));
+                    setPrestacoesHasNext(result.length > PAGE_SIZE);
+                }
             } catch (requestError) {
                 if (requestError.name !== 'AbortError') setError('Não foi possível carregar as prestações.');
             } finally {
@@ -154,7 +183,7 @@ export default function Dashboard() {
             }
         }, 300);
         return () => { controller.abort(); clearTimeout(timer); };
-    }, [prestacaoSearch, prestacaoEmissao, prestacaoVenc, prestacoesPage]);
+    }, [prestacaoSearch, prestacaoEmissao, prestacaoVenc, prestacoesPage, prestacaoVencidas]);
 
     // ── Vendedores ──────────────────────────────────────────────────────────────
     // Carrega a lista completa de vendedores (até 200). O mapa codusur → nome
@@ -278,6 +307,7 @@ export default function Dashboard() {
         },
         { header: 'Valor', render: (row) => formatCurrency(row.VALOR) },
         { header: 'Vencimento', render: (row) => formatDate(row.DTVENC) },
+        { header: 'Cód. cobrança', accessor: 'CODCOB' },
         {
             header: 'Status',
             render: (row) => {
@@ -431,6 +461,33 @@ export default function Dashboard() {
                         onPageChange={setPrestacoesPage}
                         extraActions={
                             <>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPrestacaoVencidas((current) =>
+                                            current === '' ? 'mais-vencidas'
+                                                : current === 'mais-vencidas' ? 'menos-vencidas'
+                                                    : ''
+                                        );
+                                        setPrestacoesPage(1);
+                                    }}
+                                    aria-pressed={prestacaoVencidas !== ''}
+                                    title={prestacaoVencidas === 'mais-vencidas'
+                                        ? 'Filtro de vencidas: mais vencidas primeiro (clique para alternar)'
+                                        : prestacaoVencidas === 'menos-vencidas'
+                                            ? 'Filtro de vencidas: menos vencidas primeiro (clique para alternar)'
+                                            : 'Filtrar apenas prestações vencidas'}
+                                    className={`inline-flex items-center gap-1.5 rounded-xl text-sm font-medium px-2.5 py-2 border-2 transition-colors ${
+                                        prestacaoVencidas
+                                            ? 'bg-rose-600 border-rose-600 text-white'
+                                            : 'bg-white border-rose-200 text-slate-700 hover:border-rose-400'
+                                    }`}
+                                >
+                                    {prestacaoVencidas === 'mais-vencidas' && <ArrowDownWideNarrow size={16} />}
+                                    {prestacaoVencidas === 'menos-vencidas' && <ArrowUpNarrowWide size={16} />}
+                                    {prestacaoVencidas === '' && <CalendarX size={16} />}
+                                    {prestacaoVencidas === 'mais-vencidas' ? 'Mais vencidas' : prestacaoVencidas === 'menos-vencidas' ? 'Menos vencidas' : 'Vencidas'}
+                                </button>
                                 <input
                                     type="date"
                                     value={prestacaoEmissao}
@@ -447,10 +504,10 @@ export default function Dashboard() {
                                     onChange={(event) => { setPrestacaoVenc(event.target.value); setPrestacoesPage(1); }}
                                     className="border-2 border-red-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-slate-900 bg-white px-2.5 py-2"
                                 />
-                                {(prestacaoEmissao || prestacaoVenc) && (
+                                {(prestacaoEmissao || prestacaoVenc || prestacaoVencidas) && (
                                     <button
                                         type="button"
-                                        onClick={() => { setPrestacaoEmissao(''); setPrestacaoVenc(''); setPrestacoesPage(1); }}
+                                        onClick={() => { setPrestacaoEmissao(''); setPrestacaoVenc(''); setPrestacaoVencidas(''); setPrestacoesPage(1); }}
                                         className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors"
                                     >
                                         Limpar filtros
