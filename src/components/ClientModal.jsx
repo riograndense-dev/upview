@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, MapPin, Phone, CreditCard, Building, User } from 'lucide-react';
 import { getClientPrestacoes } from '../api/apiService';
 
@@ -199,31 +199,33 @@ export default function ClientModal({ isOpen, onClose, client, onPrestacaoClick 
                    [&::-webkit-scrollbar-thumb]:rounded-full
                    [&::-webkit-scrollbar-thumb:hover]:bg-slate-400"
                             >
-                                <table className="w-full text-left text-sm">
+                                <table className="w-full text-left text-xs sm:text-sm">
                                     <thead className="sticky top-0 bg-slate-50">
-                                        <tr className="text-slate-500">
-                                            <th className="px-4 py-2 font-semibold">Duplicata</th>
-                                            <th className="px-4 py-2 font-semibold">Valor</th>
-                                            <th className="px-4 py-2 font-semibold">Vencimento</th>
-                                            <th className="px-4 py-2 font-semibold">Cód. cobrança</th>
-                                            <th className="px-4 py-2 font-semibold">Status</th>
+                                        <tr className="text-slate-500 border-b border-slate-200">
+                                            <th className="px-3 py-2 font-semibold">Duplicata</th>
+                                            <th className="px-3 py-2 font-semibold">Parc.</th>
+                                            <th className="px-3 py-2 font-semibold">Valor</th>
+                                            <th className="px-3 py-2 font-semibold">Vencimento</th>
+                                            <th className="px-3 py-2 font-semibold">Cód. cob.</th>
+                                            <th className="px-3 py-2 font-semibold">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {prestacoes.map((p) => {
+                                        {prestacoes.map((p, idx) => {
                                             const s = getStatus(p);
                                             return (
                                                 <tr
-                                                    key={`${p.DUPLIC}-${p.CODFILIAL ?? ''}`}
+                                                    key={`${p.DUPLIC}-${p.PREST ?? ''}-${p.CODFILIAL ?? ''}-${idx}`}
                                                     onClick={() => onPrestacaoClick?.(p)}
                                                     className={onPrestacaoClick ? 'transition-colors cursor-pointer hover:bg-slate-100' : 'transition-colors hover:bg-slate-50'}
                                                     title={onPrestacaoClick ? 'Ver detalhes da prestação' : undefined}
                                                 >
-                                                    <td className="px-4 py-2 text-slate-700">{p.DUPLIC}</td>
-                                                    <td className="px-4 py-2 font-medium text-slate-800">{formatCurrency(p.VALOR)}</td>
-                                                    <td className="px-4 py-2 text-slate-700">{formatDate(p.DTVENC)}</td>
-                                                    <td className="px-4 py-2 text-slate-700">{p.CODCOB || '—'}</td>
-                                                    <td className="px-4 py-2">
+                                                    <td className="px-3 py-2 font-medium text-slate-700">{p.DUPLIC}</td>
+                                                    <td className="px-3 py-2 text-slate-600 font-medium">{p.PREST != null ? p.PREST : '—'}</td>
+                                                    <td className="px-3 py-2 font-semibold text-slate-800">{formatCurrency(p.VALOR)}</td>
+                                                    <td className="px-3 py-2 text-slate-700">{formatDate(p.DTVENC)}</td>
+                                                    <td className="px-3 py-2 text-slate-700">{p.CODCOB || '—'}</td>
+                                                    <td className="px-3 py-2">
                                                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[s]}`}>{s}</span>
                                                     </td>
                                                 </tr>

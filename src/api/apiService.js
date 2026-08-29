@@ -100,11 +100,18 @@ export const listPrestacoesAVencer = (params, options = {}) =>
 export const listPrestacoesAVencerPorDia = (params, options = {}) =>
     api.getData("/prestacoes/a-vencer/por-dia", params, options);
 
-/** PATCH /prestacoes/{duplic}/observacao — Cria ou atualiza observação */
-export const updatePrestacaoObservacao = (duplic, observacao, options = {}) =>
-    api.patchData(`/prestacoes/${duplic}/observacao`, { observacao }, options);
+/**
+ * PATCH /prestacoes/{duplic}/{prest}/observacao ou /prestacoes/{duplic}/observacao
+ * Cria ou atualiza observação de uma prestação específica (duplicata + parcela opcional).
+ */
+export const updatePrestacaoObservacao = (duplic, observacao, prest = null, options = {}) => {
+    if (prest != null) {
+        return api.patchData(`/prestacoes/${duplic}/${prest}/observacao`, { observacao }, options);
+    }
+    return api.patchData(`/prestacoes/${duplic}/observacao`, { observacao }, options);
+};
 
-// ── Vendedores ─────────────────────────────────────────────────────────
+// ── Vendedores & Relatórios ─────────────────────────────────────────────
 
 /** GET /user/ — Lista de vendedores (usuários Winthor) */
 export const listVendedores = (params, options = {}) =>
@@ -118,4 +125,9 @@ export const getVendedor = async (codusur, options = {}) => {
     const data = await api.getData("/user/", { codusur }, options);
     return (Array.isArray(data) ? data : []).find((u) => u?.CODUSUR === codusur) ?? null;
 };
+
+/** GET /relatorios/vendas-por-vendedor — Relatório de vendas por vendedor */
+export const getVendasPorVendedor = (params, options = {}) =>
+    api.getData("/relatorios/vendas-por-vendedor", params, options);
+
 

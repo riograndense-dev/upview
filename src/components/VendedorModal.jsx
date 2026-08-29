@@ -42,30 +42,32 @@ function PrestacoesSection({ title, data, emptyMessage }) {
                    [&::-webkit-scrollbar-thumb]:rounded-full
                    [&::-webkit-scrollbar-thumb:hover]:bg-slate-400"
                 >
-                    <table className="w-full text-left text-sm">
+                    <table className="w-full text-left text-xs sm:text-sm">
                         <thead className="sticky top-0 bg-slate-50 z-10">
-                            <tr className="text-slate-500">
-                                <th className="px-4 py-2 font-semibold">Duplicata</th>
-                                <th className="px-4 py-2 font-semibold">Cliente</th>
-                                <th className="px-4 py-2 font-semibold">Valor</th>
-                                <th className="px-4 py-2 font-semibold">Vencimento</th>
-                                <th className="px-4 py-2 font-semibold">Cód. cobrança</th>
-                                <th className="px-4 py-2 font-semibold">Status</th>
+                            <tr className="text-slate-500 border-b border-slate-200">
+                                <th className="px-3 py-2 font-semibold">Duplicata</th>
+                                <th className="px-3 py-2 font-semibold">Parc.</th>
+                                <th className="px-3 py-2 font-semibold">Cliente</th>
+                                <th className="px-3 py-2 font-semibold">Valor</th>
+                                <th className="px-3 py-2 font-semibold">Vencimento</th>
+                                <th className="px-3 py-2 font-semibold">Cód. cob.</th>
+                                <th className="px-3 py-2 font-semibold">Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {data.map((p) => {
+                            {data.map((p, idx) => {
                                 const s = getStatus(p);
                                 return (
-                                    <tr key={`${p.DUPLIC}-${p.CODFILIAL ?? ''}`}>
-                                        <td className="px-4 py-2 text-slate-700 font-medium">{p.DUPLIC}</td>
-                                        <td className="px-4 py-2 text-slate-700 truncate max-w-[200px]" title={p.CLIENTE || ''}>
+                                    <tr key={`${p.DUPLIC}-${p.PREST ?? ''}-${p.CODFILIAL ?? ''}-${idx}`}>
+                                        <td className="px-3 py-2 text-slate-700 font-medium">{p.DUPLIC}</td>
+                                        <td className="px-3 py-2 text-slate-600 font-medium">{p.PREST != null ? p.PREST : '—'}</td>
+                                        <td className="px-3 py-2 text-slate-700 truncate max-w-[180px]" title={p.CLIENTE || ''}>
                                             {p.CLIENTE || '—'}
                                         </td>
-                                        <td className="px-4 py-2 font-semibold text-slate-800">{formatCurrency(p.VALOR)}</td>
-                                        <td className="px-4 py-2 text-slate-700">{formatDate(p.DTVENC)}</td>
-                                        <td className="px-4 py-2 text-slate-700">{p.CODCOB || '—'}</td>
-                                        <td className="px-4 py-2">
+                                        <td className="px-3 py-2 font-semibold text-slate-800">{formatCurrency(p.VALOR)}</td>
+                                        <td className="px-3 py-2 text-slate-700">{formatDate(p.DTVENC)}</td>
+                                        <td className="px-3 py-2 text-slate-700">{p.CODCOB || '—'}</td>
+                                        <td className="px-3 py-2">
                                             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[s]}`}>{s}</span>
                                         </td>
                                     </tr>

@@ -63,6 +63,11 @@ export default function PrestacaoModal({ isOpen, onClose, prestacao, onEditObser
                             <span className="bg-blue-500/20 text-blue-200 text-xs font-bold px-3 py-1 rounded-full border border-blue-400/30">
                                 Duplicata #{prestacao.DUPLIC}
                             </span>
+                            {prestacao.PREST != null && (
+                                <span className="bg-indigo-500/20 text-indigo-200 text-xs font-bold px-3 py-1 rounded-full border border-indigo-400/30">
+                                    Parcela #{prestacao.PREST}
+                                </span>
+                            )}
                             <span className={`text-xs font-bold px-3 py-1 rounded-full border ${statusStyle}`}>
                                 {status}
                             </span>
@@ -98,14 +103,14 @@ export default function PrestacaoModal({ isOpen, onClose, prestacao, onEditObser
                     <Field
                         icon={Hash}
                         iconClass="bg-purple-50 text-purple-600"
-                        label="Código da prestação"
+                        label="Duplicata"
                         value={prestacao.DUPLIC}
                     />
                     <Field
                         icon={Hash}
                         iconClass="bg-indigo-50 text-indigo-600"
-                        label="Código da parcela"
-                        value={prestacao.DUPLIC}
+                        label="Parcela"
+                        value={prestacao.PREST != null ? String(prestacao.PREST) : '—'}
                     />
                     <Field
                         icon={User}

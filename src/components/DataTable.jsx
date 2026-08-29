@@ -42,15 +42,49 @@ export default function DataTable({
 
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
-                    <thead><tr className="bg-slate-900 text-white border-b-2 border-slate-900">
-                        {columns.map((column) => <th key={column.header} className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100">{column.header}</th>)}
-                    </tr></thead>
+                    <thead>
+                        <tr className="bg-slate-900 text-white border-b-2 border-slate-900">
+                            {columns.map((column) => (
+                                <th
+                                    key={column.header}
+                                    className={`px-3 py-3 sm:px-4 sm:py-3.5 text-xs font-bold uppercase tracking-wider text-slate-100 ${column.headerClassName || ''} ${column.align === 'right' ? 'text-right' : column.align === 'center' ? 'text-center' : 'text-left'}`}
+                                >
+                                    {column.header}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {loading ? <tr><td colSpan={columns.length} className="px-6 py-12 text-center text-slate-400">Carregando dados...</td></tr>
-                            : data.length === 0 ? <tr><td colSpan={columns.length} className="px-6 py-12 text-center text-slate-400">Nenhum registro encontrado.</td></tr>
-                            : data.map((row, index) => <tr key={`${row.CODFILIAL ?? 'sem-filial'}-${row.DUPLIC ?? row.CODCLI ?? 'registro'}-${index}`} onClick={() => onRowClick?.(row)} className={`transition-colors ${onRowClick ? 'cursor-pointer hover:bg-slate-100' : 'hover:bg-slate-50'}`}>
-                                {columns.map((column) => <td key={column.header} className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">{column.render ? column.render(row) : row[column.accessor] ?? '-'}</td>)}
-                            </tr>)}
+                        {loading ? (
+                            <tr>
+                                <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-400">
+                                    Carregando dados...
+                                </td>
+                            </tr>
+                        ) : data.length === 0 ? (
+                            <tr>
+                                <td colSpan={columns.length} className="px-4 py-12 text-center text-slate-400">
+                                    Nenhum registro encontrado.
+                                </td>
+                            </tr>
+                        ) : (
+                            data.map((row, index) => (
+                                <tr
+                                    key={`${row.CODFILIAL ?? 'sem-filial'}-${row.DUPLIC ?? row.CODCLI ?? 'registro'}-${row.PREST ?? 'sem-prest'}-${index}`}
+                                    onClick={() => onRowClick?.(row)}
+                                    className={`transition-colors ${onRowClick ? 'cursor-pointer hover:bg-slate-100' : 'hover:bg-slate-50'}`}
+                                >
+                                    {columns.map((column) => (
+                                        <td
+                                            key={column.header}
+                                            className={`px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm font-medium text-slate-700 ${column.className || 'whitespace-nowrap'} ${column.align === 'right' ? 'text-right' : column.align === 'center' ? 'text-center' : 'text-left'}`}
+                                        >
+                                            {column.render ? column.render(row) : row[column.accessor] ?? '-'}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>

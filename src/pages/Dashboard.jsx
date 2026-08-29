@@ -225,10 +225,22 @@ export default function Dashboard() {
         if (!normalized || !editingPrestacao) return;
         setSavingObservation(true);
         try {
-            const updated = await apiService.updatePrestacaoObservacao(editingPrestacao.DUPLIC, normalized);
-            setPrestacoes((current) => current.map((item) => item.DUPLIC === updated.DUPLIC ? updated : item));
+            const updated = await apiService.updatePrestacaoObservacao(
+                editingPrestacao.DUPLIC,
+                normalized,
+                editingPrestacao.PREST ?? null
+            );
+            setPrestacoes((current) => current.map((item) =>
+                item.DUPLIC === updated.DUPLIC && (item.PREST == null || item.PREST === updated.PREST)
+                    ? updated
+                    : item
+            ));
             // Atualiza também o modal de detalhes se estiver aberto na mesma prestação
-            if (selectedPrestacao && selectedPrestacao.DUPLIC === updated.DUPLIC) {
+            if (
+                selectedPrestacao &&
+                selectedPrestacao.DUPLIC === updated.DUPLIC &&
+                (selectedPrestacao.PREST == null || selectedPrestacao.PREST === updated.PREST)
+            ) {
                 setSelectedPrestacao(updated);
             }
             setEditingPrestacao(null);
@@ -246,15 +258,17 @@ export default function Dashboard() {
 
     // ── Colunas ───────────────────────────────────────────────────────────────
     const clientsColumns = [
-        { header: 'Código', accessor: 'CODCLI' }, { header: 'Cliente', accessor: 'CLIENTE' },
-        { header: 'Município', accessor: 'MUNICENT' }, { header: 'Telefone', accessor: 'TELENT' },
-        { header: 'Limite de crédito', render: (row) => formatCurrency(row.LIMCRED) },
+        { header: 'Código', accessor: 'CODCLI', className: 'whitespace-nowrap font-medium' },
+        { header: 'Cliente', accessor: 'CLIENTE', className: 'truncate max-w-[220px]' },
+        { header: 'Município', accessor: 'MUNICENT', className: 'whitespace-nowrap text-slate-600' },
+        { header: 'Telefone', accessor: 'TELENT', className: 'whitespace-nowrap text-slate-600' },
+        { header: 'Limite de crédito', render: (row) => formatCurrency(row.LIMCRED), className: 'whitespace-nowrap font-semibold text-slate-900' },
     ];
 
     const STATUS_BADGE = {
         Pago:       'bg-emerald-100 text-emerald-700',
         Vencido:    'bg-rose-100 text-rose-700',
-        'A vender': 'bg-amber-100 text-amber-700',
+        'A vencer': 'bg-amber-100 text-amber-700',
     };
 
     // ── Derivados de vendedores ────────────────────────────────────────────────
@@ -278,15 +292,32 @@ export default function Dashboard() {
     const vendedoresHasNext = vendedoresFiltrados.length > vendedoresPage * PAGE_SIZE;
 
     const vendedoresColumns = [
-        { header: 'Código', accessor: 'CODUSUR' },
-        { header: 'Nome', accessor: 'NOME' },
+        { header: 'Código', accessor: 'CODUSUR', className: 'whitespace-nowrap font-medium' },
+        { header: 'Nome', accessor: 'NOME', className: 'font-semibold text-slate-800' },
     ];
 
     const prestacoesColumns = [
-        { header: 'Duplicata', accessor: 'DUPLIC' },
-        { header: 'Cliente', accessor: 'CLIENTE' },
+        { header: 'Duplicata', accessor: 'DUPLIC', className: 'whitespace-nowrap font-semibold text-slate-900' },
+        {
+            header: 'Parc.',
+            align: 'center',
+            className: 'whitespace-nowrap text-center',
+            render: (row) => row.PREST != null
+                ? <span className="font-semibold text-slate-700">{row.PREST}</span>
+                : <span className="text-slate-400">—</span>,
+        },
+        {
+            header: 'Cliente',
+            className: 'max-w-[170px]',
+            render: (row) => (
+                <span className="block truncate text-slate-800" title={row.CLIENTE || ''}>
+                    {row.CLIENTE || '—'}
+                </span>
+            ),
+        },
         {
             header: 'Vendedor',
+            className: 'max-w-[130px]',
             render: (row) => {
                 if (row.CODUSUR == null) return <span className="text-slate-400">—</span>;
                 const nome = vendedoresMap[row.CODUSUR];
@@ -297,19 +328,32 @@ export default function Dashboard() {
                             e.stopPropagation();
                             setSelectedVendedor({ CODUSUR: row.CODUSUR, NOME: nome });
                         }}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-blue-700 hover:underline transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-blue-700 hover:underline transition-colors cursor-pointer truncate max-w-[130px]"
                         title={nome ? `${nome} (#${row.CODUSUR})` : `Vendedor #${row.CODUSUR}`}
                     >
-                        {nome ? `${nome} (#${row.CODUSUR})` : `#${row.CODUSUR}`}
+                        {nome ? `${nome}` : `#${row.CODUSUR}`}
                     </button>
                 );
             },
         },
-        { header: 'Valor', render: (row) => formatCurrency(row.VALOR) },
-        { header: 'Vencimento', render: (row) => formatDate(row.DTVENC) },
-        { header: 'Cód. cobrança', accessor: 'CODCOB' },
+        {
+            header: 'Valor',
+            className: 'whitespace-nowrap font-semibold text-slate-900',
+            render: (row) => formatCurrency(row.VALOR),
+        },
+        {
+            header: 'Vencimento',
+            className: 'whitespace-nowrap text-slate-700',
+            render: (row) => formatDate(row.DTVENC),
+        },
+        {
+            header: 'Cód. cob.',
+            accessor: 'CODCOB',
+            className: 'whitespace-nowrap text-slate-600',
+        },
         {
             header: 'Status',
+            className: 'whitespace-nowrap',
             render: (row) => {
                 const s = getStatus(row);
                 return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[s]}`}>{s}</span>;
@@ -317,16 +361,17 @@ export default function Dashboard() {
         },
         {
             header: 'Observação',
+            className: 'min-w-[150px]',
             render: (row) => (
-                <div className="flex items-center gap-2 min-w-[140px]">
+                <div className="flex items-center justify-between gap-1.5 max-w-[220px]">
                     {row.OBS
-                        ? <span className="text-xs text-slate-600 italic truncate max-w-[120px]" title={row.OBS}>"{row.OBS}"</span>
+                        ? <span className="text-xs text-slate-600 italic truncate" title={row.OBS}>"{row.OBS}"</span>
                         : <span className="text-xs text-slate-400 italic">—</span>
                     }
                     <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); handleEditObservacao(row); }}
-                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-900 shrink-0"
+                        className="inline-flex items-center p-1 rounded-md text-blue-600 hover:text-blue-900 hover:bg-blue-50 shrink-0 transition-colors"
                         title={row.OBS ? 'Editar observação' : 'Adicionar observação'}
                     >
                         <Pencil size={13} />
@@ -560,7 +605,14 @@ export default function Dashboard() {
             {editingPrestacao && (
                 <div className="fixed inset-0 z-[60] bg-slate-950/50 flex items-center justify-center p-4">
                     <form onSubmit={saveObservation} className="w-full max-w-lg rounded-2xl bg-white p-6 space-y-4 shadow-2xl">
-                        <h2 className="text-xl font-bold">Observação da duplicata {editingPrestacao.DUPLIC}</h2>
+                        <h2 className="text-xl font-bold text-slate-900">
+                            Observação da duplicata #{editingPrestacao.DUPLIC}
+                            {editingPrestacao.PREST != null && (
+                                <span className="text-slate-500 font-medium text-base ml-2">
+                                    (Parcela #{editingPrestacao.PREST})
+                                </span>
+                            )}
+                        </h2>
                         <textarea
                             autoFocus
                             required
