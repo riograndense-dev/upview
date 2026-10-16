@@ -3,6 +3,7 @@ import {
     X, Hash, User, DollarSign, Calendar, CalendarCheck,
     CalendarX, CreditCard, Building2, UserCheck, MessageSquare, Pencil
 } from 'lucide-react';
+import BoletoDownloadButton from './BoletoDownloadButton';
 
 const formatCurrency = (value) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
@@ -183,7 +184,8 @@ export default function PrestacaoModal({ isOpen, onClose, prestacao, onEditObser
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 flex justify-end">
+                <div className="p-6 flex flex-wrap justify-end gap-3">
+                    <BoletoDownloadButton prestacao={prestacao} />
                     <button
                         onClick={onClose}
                         className="px-6 py-2.5 bg-slate-900 text-white font-medium rounded-xl hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20"

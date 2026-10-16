@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, MapPin, Phone, CreditCard, Building, User } from 'lucide-react';
 import { getClientPrestacoes } from '../api/apiService';
+import BoletoDownloadButton from './BoletoDownloadButton';
 
 const formatCurrency = (value) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
@@ -208,6 +209,7 @@ export default function ClientModal({ isOpen, onClose, client, onPrestacaoClick 
                                             <th className="px-3 py-2 font-semibold">Vencimento</th>
                                             <th className="px-3 py-2 font-semibold">Cód. cob.</th>
                                             <th className="px-3 py-2 font-semibold">Status</th>
+                                            <th className="px-3 py-2 font-semibold text-center">Boleto</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
@@ -227,6 +229,9 @@ export default function ClientModal({ isOpen, onClose, client, onPrestacaoClick 
                                                     <td className="px-3 py-2 text-slate-700">{p.CODCOB || '—'}</td>
                                                     <td className="px-3 py-2">
                                                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[s]}`}>{s}</span>
+                                                    </td>
+                                                    <td className="px-3 py-2 text-center">
+                                                        <BoletoDownloadButton prestacao={p} compact />
                                                     </td>
                                                 </tr>
                                             );

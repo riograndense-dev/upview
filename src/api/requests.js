@@ -3,8 +3,12 @@
         this.apiUrl = import.meta.env.VITE_API_URL;
     }
 
-    getHeaders() {
+    getHeaders(requireAuth = false) {
         const token = localStorage.getItem("token");
+
+        if (requireAuth && !token) {
+            throw new Error("Sessão expirada. Entre novamente para acessar o WhatsApp.");
+        }
 
         return {
             "Content-Type": "application/json",
@@ -25,7 +29,7 @@
 
         if (!response.ok) {
             throw new Error(
-                data?.detail ||
+                this.getErrorMessage(data?.detail) ||
                 data?.message ||
                 `Erro HTTP ${response.status}`
             );
@@ -34,35 +38,40 @@
         return data;
     }
 
+    getErrorMessage(detail) {
+        if (!detail) return "";
+        if (typeof detail === "string") return detail;
+        if (Array.isArray(detail)) {
+            return detail
+                .map((item) => item?.msg || item?.message || String(item))
+                .join("; ");
+        }
+        return detail.message || JSON.stringify(detail);
+    }
+
+    buildUrl(endpoint, params) {
+        const url = new URL(`${this.apiUrl}${endpoint}`);
+
+        if (params) {
+            Object.keys(params).forEach((key) => {
+                if (params[key] != null) url.searchParams.append(key, params[key]);
+            });
+        }
+
+        return url;
+    }
+
     //GET
     async getData(endpoint, params, options = {}) {
 
         try {
 
-            const url =
-                new URL(
-                    `${this.apiUrl}${endpoint}`
-                );
-
-            if (params) {
-
-                Object.keys(params)
-                    .forEach(key => {
-                        // Ignora valores nulos/undefined para nao enviar "null" na querystring
-                        if (params[key] != null) {
-                            url.searchParams.append(
-                                key,
-                                params[key]
-                            );
-                        }
-                    });
-
-            }
+            const url = this.buildUrl(endpoint, params);
 
             const response =
                 await fetch(url, {
                     headers:
-                        this.getHeaders(),
+                        this.getHeaders(options.requireAuth),
                     ...(options.signal && { signal: options.signal }),
                 });
 
@@ -76,6 +85,41 @@
         }
     }
 
+    // GET de conteúdo binário (PDF, imagem, etc.)
+    async getBlob(endpoint, params, options = {}) {
+        const response = await fetch(this.buildUrl(endpoint, params), {
+            headers: this.getHeaders(options.requireAuth),
+            ...(options.signal && { signal: options.signal }),
+        });
+
+        if (!response.ok) {
+            const contentType = response.headers.get("content-type") || "";
+            const data = contentType.includes("application/json")
+                ? await response.json()
+                : null;
+            throw new Error(
+                this.getErrorMessage(data?.detail) ||
+                data?.message ||
+                `Erro HTTP ${response.status}`
+            );
+        }
+
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+            const data = await response.json();
+            throw new Error(
+                this.getErrorMessage(data?.detail) ||
+                data?.message ||
+                "A API não retornou o arquivo solicitado."
+            );
+        }
+
+        return {
+            blob: await response.blob(),
+            contentDisposition: response.headers.get("content-disposition") || "",
+        };
+    }
+
     //POST
     async postData(endpoint, data, options = {}) {
 
@@ -85,7 +129,7 @@
                 {
                     method: "POST",
                     headers:
-                        this.getHeaders(),
+                        this.getHeaders(options.requireAuth),
                     body:
                         JSON.stringify(data),
                     ...(options.signal && { signal: options.signal }),
@@ -104,7 +148,7 @@
                 {
                     method: "PUT",
                     headers:
-                        this.getHeaders(),
+                        this.getHeaders(options.requireAuth),
                     body:
                         JSON.stringify(data),
                     ...(options.signal && { signal: options.signal }),
@@ -123,7 +167,7 @@
                 {
                     method: "PATCH",
                     headers:
-                        this.getHeaders(),
+                        this.getHeaders(options.requireAuth),
                     body:
                         JSON.stringify(data),
                     ...(options.signal && { signal: options.signal }),
@@ -142,7 +186,7 @@
                 {
                     method: "DELETE",
                     headers:
-                        this.getHeaders(),
+                        this.getHeaders(options.requireAuth),
                     ...(options.signal && { signal: options.signal }),
                 }
             );

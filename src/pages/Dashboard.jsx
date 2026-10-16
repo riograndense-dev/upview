@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, ArrowDownWideNarrow, ArrowUpNarrowWide, BarChart3, CalendarX, DollarSign, FileText, LogOut, Pencil, UserCheck, Users } from 'lucide-react';
+import { AlertCircle, ArrowDownWideNarrow, ArrowUpNarrowWide, BarChart3, CalendarX, DollarSign, FileText, LogOut, MessageCircle, Pencil, UserCheck, Users } from 'lucide-react';
 
 import * as apiService from '../api/apiService';
 import { BarChartVencimentos, PieChartStatus } from '../components/Charts';
+import BoletoDownloadButton from '../components/BoletoDownloadButton';
+import BroadcastCobranca from '../components/BroadcastCobranca';
 import ClientModal from '../components/ClientModal';
 import DataTable from '../components/DataTable';
 import MetricCard from '../components/MetricCard';
@@ -360,6 +362,16 @@ export default function Dashboard() {
             },
         },
         {
+            header: 'Boleto',
+            align: 'center',
+            className: 'whitespace-nowrap text-center',
+            render: (row) => (
+                String(row.CODCOB ?? '').trim() === '748'
+                    ? <BoletoDownloadButton prestacao={row} compact onError={setError} />
+                    : <span className="text-slate-400">—</span>
+            ),
+        },
+        {
             header: 'Observação',
             className: 'min-w-[150px]',
             render: (row) => (
@@ -402,7 +414,7 @@ export default function Dashboard() {
                 </header>
 
                 <nav aria-label="Seções do dashboard" className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-                    {[['visao-geral', 'Visão geral', BarChart3], ['clientes', 'Clientes', Users], ['prestacoes', 'Prestações', FileText], ['vendedores', 'Vendedores', UserCheck]].map(([key, label, Icon]) => (
+                    {[['visao-geral', 'Visão geral', BarChart3], ['clientes', 'Clientes', Users], ['prestacoes', 'Prestações', FileText], ['vendedores', 'Vendedores', UserCheck], ['broadcast', 'Broadcast de cobrança', MessageCircle]].map(([key, label, Icon]) => (
                         <button
                             type="button"
                             key={key}
@@ -579,6 +591,9 @@ export default function Dashboard() {
                         onPageChange={setVendedoresPage}
                     />
                 )}
+
+                {/* ── Broadcast de cobrança ───────────────────────────────── */}
+                {view === 'broadcast' && <BroadcastCobranca />}
             </main>
 
             {/* ── Modais ────────────────────────────────────────────────────── */}

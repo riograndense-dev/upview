@@ -1,5 +1,7 @@
 import api from "./requests";
 
+const withRequiredAuth = (options = {}) => ({ ...options, requireAuth: true });
+
 /**
  * Service layer centralizado com funções para todos os endpoints
  * definidos em docs/openapi.json.
@@ -101,6 +103,16 @@ export const listPrestacoesAVencerPorDia = (params, options = {}) =>
     api.getData("/prestacoes/a-vencer/por-dia", params, options);
 
 /**
+ * GET /prestacoes/broadcast-cobranca - Clientes, telefones e prestacoes ja
+ * agrupados para a tela de broadcast. `periodo=abertas` com `search` pesquisa
+ * nome, CPF/CNPJ ou codigo entre todas as faturas em aberto. O endpoint nao
+ * aplica o limite de envio: somente os clientes selecionados no POST sao
+ * limitados a 100.
+ */
+export const listBroadcastCobranca = (params, options = {}) =>
+    api.getData("/prestacoes/broadcast-cobranca", params, withRequiredAuth(options));
+
+/**
  * PATCH /prestacoes/{duplic}/{prest}/observacao ou /prestacoes/{duplic}/observacao
  * Cria ou atualiza observação de uma prestação específica (duplicata + parcela opcional).
  */
@@ -110,6 +122,30 @@ export const updatePrestacaoObservacao = (duplic, observacao, prest = null, opti
     }
     return api.patchData(`/prestacoes/${duplic}/observacao`, { observacao }, options);
 };
+
+/** GET /boleto/sicredi — Gera o PDF de um boleto Sicredi pela linha digitável. */
+export const getBoletoSicredi = (linhaDigitavel, options = {}) =>
+    api.getBlob("/boleto/sicredi", { linha_digitavel: linhaDigitavel, download: true }, options);
+
+// ── WhatsApp ─────────────────────────────────────────────────────────
+
+const WPP_PREFIX = "/wpp/api/v1";
+
+/** GET /wpp/api/v1/session/status — Estado da conexão com o WhatsApp. */
+export const getWhatsAppSessionStatus = (options = {}) =>
+    api.getData(`${WPP_PREFIX}/session/status`, undefined, withRequiredAuth(options));
+
+/** GET /wpp/api/v1/session/qr — QR ativo para vincular um aparelho. */
+export const getWhatsAppQr = (options = {}) =>
+    api.getData(`${WPP_PREFIX}/session/qr`, undefined, withRequiredAuth(options));
+
+/** POST /wpp/api/v1/session/reconnect — Solicita uma nova conexão. */
+export const reconnectWhatsApp = (options = {}) =>
+    api.postData(`${WPP_PREFIX}/session/reconnect`, undefined, withRequiredAuth(options));
+
+/** POST /wpp/api/v1/messages/send — Envia a cobrança para até 100 clientes. */
+export const sendWhatsAppBilling = (clientes, options = {}) =>
+    api.postData(`${WPP_PREFIX}/messages/send`, { clientes }, withRequiredAuth(options));
 
 // ── Vendedores & Relatórios ─────────────────────────────────────────────
 
