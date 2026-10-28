@@ -1,62 +1,73 @@
-﻿import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import * as apiService from "../api/apiService";
 import { AuthContext } from "./auth";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-
   const [loading, setLoading] = useState(true);
-
-  async function loadUser() {
-    try {
-      const data = await apiService.me();
-
-      setUser(data);
-      return data;
-    } catch {
-      setUser(null);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }
+  const authOperation = useRef(0);
 
   useEffect(() => {
     async function validateAuth() {
-      try {
-        const user = await apiService.me();
+      const operation = ++authOperation.current;
 
-        setUser(user);
+      try {
+        const authenticatedUser = await apiService.me();
+
+        if (operation === authOperation.current) setUser(authenticatedUser);
       } catch {
-        logout();
+        // Não chama /auth/logout aqui: uma validação inicial atrasada não
+        // pode revogar uma sessão criada pelo formulário de login.
+        if (operation === authOperation.current) setUser(null);
       } finally {
-        setLoading(false);
+        if (operation === authOperation.current) setLoading(false);
       }
     }
 
-    const handleUnauthorized = () => setUser(null);
+    const handleUnauthorized = () => {
+      authOperation.current += 1;
+      setUser(null);
+      setLoading(false);
+    };
+
     window.addEventListener("auth:unauthorized", handleUnauthorized);
     validateAuth();
 
-    return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    return () => {
+      authOperation.current += 1;
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    };
   }, []);
 
-  const login = async () => {
-    const authenticatedUser = await loadUser();
-    if (!authenticatedUser) {
-      throw new Error("Não foi possível validar a sessão.");
+  const login = async (usuario, senha) => {
+    const operation = ++authOperation.current;
+    setLoading(true);
+
+    try {
+      await apiService.login(usuario, senha);
+      const authenticatedUser = await apiService.me();
+
+      if (operation === authOperation.current) setUser(authenticatedUser);
+      return authenticatedUser;
+    } catch (error) {
+      if (operation === authOperation.current) setUser(null);
+      throw error;
+    } finally {
+      if (operation === authOperation.current) setLoading(false);
     }
-    return authenticatedUser;
   };
 
   const logout = async () => {
+    authOperation.current += 1;
+
     try {
       await apiService.logout();
     } catch {
       // Mesmo se o servidor falhar, limpamos o estado local da sessão.
     }
     setUser(null);
+    setLoading(false);
   };
 
   return (

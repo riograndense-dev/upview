@@ -1,6 +1,13 @@
 import api from "./requests";
+import { buildRefreshBody, clearAccessToken, setAccessToken } from "../utils/token";
 
 const withRequiredAuth = (options = {}) => ({ ...options, requireAuth: true });
+const withWhatsAppAuth = (options = {}) => ({
+    ...options,
+    requireAuth: true,
+    // O proxy do WhatsApp pode devolver 401 sem invalidar a sessão da API.
+    refreshOnUnauthorized: false,
+});
 
 /**
  * Service layer centralizado com funções para todos os endpoints
@@ -42,19 +49,35 @@ export const sendMail = (form, options = {}) =>
 
 /** POST /auth/login — Autenticação via username/password */
 export const login = async (usuario, senha) => {
-    const data = await api.postData("/auth/login", { "usuario": usuario, "senha": senha });
-    localStorage.setItem("token", data.access_token);
+    const data = await api.postData(
+        "/auth/login",
+        { "usuario": usuario, "senha": senha },
+        { skipAuthRefresh: true },
+    );
+    setAccessToken(data.access_token, data.expires_in);
     return data;
 }
 
+/** POST /auth/refresh — Renova e rotaciona os tokens da sessão */
+export const refresh = (refreshToken = null) =>
+    api.refreshAccessToken(refreshToken);
+
 /** POST /auth/logout — Encerra sessão */
-export const logout = () => {
-    localStorage.removeItem("token");
+export const logout = async (refreshToken = null) => {
+    try {
+        return await api.postData(
+            "/auth/logout",
+            buildRefreshBody(refreshToken),
+            { skipAuthRefresh: true },
+        );
+    } finally {
+        clearAccessToken();
+    }
 }
 
 /** GET /auth/me — Dados do usuário autenticado */
 export const me = () =>{
-    const data = api.getData("/auth/me");
+    const data = api.getData("/auth/me", undefined, withRequiredAuth());
     return data;
 }
 
@@ -133,19 +156,19 @@ const WPP_PREFIX = "/wpp/api/v1";
 
 /** GET /wpp/api/v1/session/status — Estado da conexão com o WhatsApp. */
 export const getWhatsAppSessionStatus = (options = {}) =>
-    api.getData(`${WPP_PREFIX}/session/status`, undefined, withRequiredAuth(options));
+    api.getData(`${WPP_PREFIX}/session/status`, undefined, withWhatsAppAuth(options));
 
 /** GET /wpp/api/v1/session/qr — QR ativo para vincular um aparelho. */
 export const getWhatsAppQr = (options = {}) =>
-    api.getData(`${WPP_PREFIX}/session/qr`, undefined, withRequiredAuth(options));
+    api.getData(`${WPP_PREFIX}/session/qr`, undefined, withWhatsAppAuth(options));
 
 /** POST /wpp/api/v1/session/reconnect — Solicita uma nova conexão. */
 export const reconnectWhatsApp = (options = {}) =>
-    api.postData(`${WPP_PREFIX}/session/reconnect`, undefined, withRequiredAuth(options));
+    api.postData(`${WPP_PREFIX}/session/reconnect`, undefined, withWhatsAppAuth(options));
 
 /** POST /wpp/api/v1/messages/send — Envia a cobrança para até 100 clientes. */
 export const sendWhatsAppBilling = (clientes, options = {}) =>
-    api.postData(`${WPP_PREFIX}/messages/send`, { clientes }, withRequiredAuth(options));
+    api.postData(`${WPP_PREFIX}/messages/send`, { clientes }, withWhatsAppAuth(options));
 
 // ── Vendedores & Relatórios ─────────────────────────────────────────────
 

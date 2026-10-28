@@ -1,31 +1,125 @@
-﻿class ApiRequests {
+import {
+    buildRefreshBody,
+    clearAccessToken,
+    getAccessToken,
+    isTokenExpired,
+    setAccessToken,
+} from "../utils/token";
+
+class ApiRequests {
     constructor() {
         this.apiUrl = import.meta.env.VITE_API_URL;
+        this.refreshPromise = null;
     }
 
-    getHeaders(requireAuth = false) {
-        const token = localStorage.getItem("token");
-
-        if (requireAuth && !token) {
-            throw new Error("Sessão expirada. Entre novamente para acessar o WhatsApp.");
-        }
+    getHeaders() {
+        const token = getAccessToken();
 
         return {
             "Content-Type": "application/json",
-            ...(token && {
-                "Authorization": `Bearer ${token}`
-            })
+            ...(token && { "Authorization": `Bearer ${token}` }),
         };
     }
 
-    async handleResponse(response) {
-        const contentType =
-            response.headers.get("content-type") || "";
+    notifyUnauthorized() {
+        clearAccessToken();
 
-        const data =
-            contentType.includes("application/json")
-                ? await response.json()
-                : null;
+        if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("auth:unauthorized"));
+        }
+    }
+
+    /**
+     * Renova o access token usando o refresh token HttpOnly. A mesma Promise é
+     * compartilhada entre chamadas simultâneas para que um token rotativo nunca
+     * seja utilizado mais de uma vez.
+     */
+    async refreshAccessToken(refreshToken = null) {
+        if (this.refreshPromise) return this.refreshPromise;
+
+        this.refreshPromise = (async () => {
+            try {
+                const response = await fetch(`${this.apiUrl}/auth/refresh`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(buildRefreshBody(refreshToken)),
+                });
+
+                if (!response.ok) {
+                    // Somente uma rejeição de autenticação do próprio
+                    // endpoint de refresh confirma que a sessão acabou. Erros
+                    // transitórios (rede/5xx) não devem expulsar o usuário.
+                    if (response.status === 401 || response.status === 403) {
+                        this.notifyUnauthorized();
+                    }
+                    return null;
+                }
+
+                const data = await response.json();
+                if (!data?.access_token) {
+                    return null;
+                }
+
+                setAccessToken(data.access_token, data.expires_in);
+                return data;
+            } catch {
+                return null;
+            } finally {
+                this.refreshPromise = null;
+            }
+        })();
+
+        return this.refreshPromise;
+    }
+
+    async fetchWithAuth(url, init = {}, options = {}) {
+        const skipAuthRefresh = options.skipAuthRefresh === true;
+        const refreshOnUnauthorized = options.refreshOnUnauthorized !== false;
+        const token = getAccessToken();
+        let refreshAttempted = false;
+
+        const shouldRefreshBeforeRequest =
+            (token && isTokenExpired(token)) ||
+            (options.requireAuth && !token);
+
+        if (!skipAuthRefresh && shouldRefreshBeforeRequest) {
+            await this.refreshAccessToken();
+            refreshAttempted = true;
+        }
+
+        const request = () => fetch(url, {
+            ...init,
+            credentials: "include",
+            headers: this.getHeaders(),
+            ...(options.signal && { signal: options.signal }),
+        });
+
+        let response = await request();
+
+        if (
+            response.status !== 401 ||
+            skipAuthRefresh ||
+            refreshAttempted ||
+            !refreshOnUnauthorized
+        ) {
+            return response;
+        }
+
+        const refreshed = await this.refreshAccessToken();
+        if (!refreshed) return response;
+
+        // Se apenas este endpoint continuar retornando 401 depois de um refresh
+        // bem-sucedido, deixamos o erro chegar ao componente. A sessão global
+        // continua válida e /auth/me permanece como fonte de verdade.
+        return request();
+    }
+
+    async handleResponse(response) {
+        const contentType = response.headers.get("content-type") || "";
+        const data = contentType.includes("application/json")
+            ? await response.json()
+            : null;
 
         if (!response.ok) {
             throw new Error(
@@ -61,36 +155,27 @@
         return url;
     }
 
-    //GET
     async getData(endpoint, params, options = {}) {
-
         try {
-
-            const url = this.buildUrl(endpoint, params);
-
-            const response =
-                await fetch(url, {
-                    headers:
-                        this.getHeaders(options.requireAuth),
-                    ...(options.signal && { signal: options.signal }),
-                });
-
+            const response = await this.fetchWithAuth(
+                this.buildUrl(endpoint, params),
+                {},
+                options,
+            );
             return this.handleResponse(response);
-
         } catch (error) {
-
             console.error(error);
-
             throw error;
         }
     }
 
     // GET de conteúdo binário (PDF, imagem, etc.)
     async getBlob(endpoint, params, options = {}) {
-        const response = await fetch(this.buildUrl(endpoint, params), {
-            headers: this.getHeaders(options.requireAuth),
-            ...(options.signal && { signal: options.signal }),
-        });
+        const response = await this.fetchWithAuth(
+            this.buildUrl(endpoint, params),
+            {},
+            options,
+        );
 
         if (!response.ok) {
             const contentType = response.headers.get("content-type") || "";
@@ -120,78 +205,41 @@
         };
     }
 
-    //POST
     async postData(endpoint, data, options = {}) {
-
-        const response =
-            await fetch(
-                `${this.apiUrl}${endpoint}`,
-                {
-                    method: "POST",
-                    headers:
-                        this.getHeaders(options.requireAuth),
-                    body:
-                        JSON.stringify(data),
-                    ...(options.signal && { signal: options.signal }),
-                }
-            );
-
+        const response = await this.fetchWithAuth(
+            `${this.apiUrl}${endpoint}`,
+            { method: "POST", body: JSON.stringify(data) },
+            options,
+        );
         return this.handleResponse(response);
     }
 
-    //PUT
     async putData(endpoint, data, options = {}) {
-
-        const response =
-            await fetch(
-                `${this.apiUrl}${endpoint}`,
-                {
-                    method: "PUT",
-                    headers:
-                        this.getHeaders(options.requireAuth),
-                    body:
-                        JSON.stringify(data),
-                    ...(options.signal && { signal: options.signal }),
-                }
-            );
-
+        const response = await this.fetchWithAuth(
+            `${this.apiUrl}${endpoint}`,
+            { method: "PUT", body: JSON.stringify(data) },
+            options,
+        );
         return this.handleResponse(response);
     }
 
-    //PATCH
     async patchData(endpoint, data, options = {}) {
-
-        const response =
-            await fetch(
-                `${this.apiUrl}${endpoint}`,
-                {
-                    method: "PATCH",
-                    headers:
-                        this.getHeaders(options.requireAuth),
-                    body:
-                        JSON.stringify(data),
-                    ...(options.signal && { signal: options.signal }),
-                }
-            );
-
+        const response = await this.fetchWithAuth(
+            `${this.apiUrl}${endpoint}`,
+            { method: "PATCH", body: JSON.stringify(data) },
+            options,
+        );
         return this.handleResponse(response);
     }
 
-    //DELETE
     async deleteData(endpoint, options = {}) {
-
-        const response =
-            await fetch(
-                `${this.apiUrl}${endpoint}`,
-                {
-                    method: "DELETE",
-                    headers:
-                        this.getHeaders(options.requireAuth),
-                    ...(options.signal && { signal: options.signal }),
-                }
-            );
-
+        const response = await this.fetchWithAuth(
+            `${this.apiUrl}${endpoint}`,
+            { method: "DELETE" },
+            options,
+        );
         return this.handleResponse(response);
     }
 }
+
 export default new ApiRequests();

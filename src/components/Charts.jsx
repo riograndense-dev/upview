@@ -56,7 +56,7 @@ export function BarChartVencimentos({ data, dias }) {
   const tickFormatter = hasDateField ? formatDayTick : (v) => v;
   const labelFormatter = hasDateField ? formatDayFull : (v) => v;
 
-  // Com muitos dias, inclina os rótulos para não sobrepor
+
   const showAngled = (data?.length || 0) > 8;
 
   return (

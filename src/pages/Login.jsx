@@ -2,7 +2,6 @@
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { login as authenticate } from '../api/apiService';
 
 export default function Login() {
     const navigate = useNavigate();
@@ -20,8 +19,7 @@ export default function Login() {
             const loginVal = formData.get('login');
             const passwordVal = formData.get('password');
 
-            await authenticate(loginVal, passwordVal);
-            await login();
+            await login(loginVal, passwordVal);
             navigate('/dashboard');
         } catch {
             setError('Falha no login. Verifique suas credenciais.');

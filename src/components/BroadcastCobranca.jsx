@@ -19,6 +19,7 @@ const MAX_CLIENTES_ENVIO = 100;
 
 const FILTERS = [
     { value: 'todas', label: 'Todas', description: 'Vencidas, hoje e próximos 3 dias' },
+    { value: 'vencidas_3_dias', label: 'Vencidas há 3 dias', description: 'Vencidas nos últimos 3 dias' },
     { value: 'vencidas', label: 'Vencidas', description: 'Vencidas nos últimos 365 dias' },
     { value: 'hoje', label: 'Vencem hoje', description: 'Somente com vencimento hoje' },
     { value: 'proximas', label: 'Próximos 3 dias', description: 'De amanhã até o terceiro dia' },
@@ -116,7 +117,11 @@ export default function BroadcastCobranca() {
             setReviewConfirmed(false);
             try {
                 const data = await apiService.listBroadcastCobranca(
-                    { periodo: filter, dias_passados: 365, dias_futuros: 3 },
+                    {
+                        periodo: filter === 'vencidas_3_dias' ? 'vencidas' : filter,
+                        dias_passados: filter === 'vencidas_3_dias' ? 3 : 365,
+                        dias_futuros: 3,
+                    },
                     { signal: controller.signal },
                 );
                 if (controller.signal.aborted) return;
