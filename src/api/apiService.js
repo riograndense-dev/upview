@@ -127,10 +127,9 @@ export const listPrestacoesAVencerPorDia = (params, options = {}) =>
 
 /**
  * GET /prestacoes/broadcast-cobranca - Clientes, telefones e prestacoes ja
- * agrupados para a tela de broadcast. `periodo=abertas` com `search` pesquisa
- * nome, CPF/CNPJ ou codigo entre todas as faturas em aberto. O endpoint nao
- * aplica o limite de envio: somente os clientes selecionados no POST sao
- * limitados a 100.
+ * agrupados para a tela de broadcast. O endpoint também recebe busca, data,
+ * valor mínimo e paginação, retornando os identificadores das prestações.
+ * O limite de 100 continua valendo para os clientes enviados no POST.
  */
 export const listBroadcastCobranca = (params, options = {}) =>
     api.getData("/prestacoes/broadcast-cobranca", params, withRequiredAuth(options));
