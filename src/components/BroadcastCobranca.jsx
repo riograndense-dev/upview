@@ -6,6 +6,7 @@ import {
     CircleDollarSign,
     FileText,
     LoaderCircle,
+    LogOut,
     MessageCircle,
     Phone,
     ReceiptText,
@@ -37,6 +38,14 @@ const STATUS_LABELS = {
     awaiting_qr: 'Aguardando QR Code',
     connected: 'Conectado',
     logged_out: 'Sessão encerrada',
+};
+
+const MESSAGE_CATEGORY_LABELS = {
+    notary: 'Cartório',
+    overdue: 'Vencida',
+    today: 'Vence hoje',
+    upcoming: 'A vencer',
+    mixed: 'Mista',
 };
 
 const formatCurrency = (value) =>
@@ -341,6 +350,20 @@ export default function BroadcastCobranca() {
             setSession(await apiService.reconnectWhatsApp());
         } catch (error) {
             setSessionError(error.message || 'Não foi possível reconectar o WhatsApp.');
+        } finally {
+            setReconnecting(false);
+        }
+    }
+
+    async function logout() {
+        if (!window.confirm('Desconectar o WhatsApp atual? As credenciais da sessão serão apagadas e será preciso ler um novo QR Code.')) return;
+        setReconnecting(true);
+        setSessionError('');
+        try {
+            setSession(await apiService.logoutWhatsApp());
+            setQr(null);
+        } catch (error) {
+            setSessionError(error.message || 'Não foi possível desconectar o WhatsApp.');
         } finally {
             setReconnecting(false);
         }
@@ -698,6 +721,18 @@ export default function BroadcastCobranca() {
                             </button>
                         )}
 
+                        {['connected', 'awaiting_qr'].includes(session?.status) && (
+                            <button
+                                type="button"
+                                onClick={logout}
+                                disabled={reconnecting || sending}
+                                className="w-full inline-flex justify-center items-center gap-2 rounded-xl border border-rose-200 px-4 py-2.5 font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                            >
+                                <LogOut size={17} />
+                                {session?.status === 'connected' ? 'Desconectar / trocar número' : 'Cancelar vínculo'}
+                            </button>
+                        )}
+
                         <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-slate-900">
                             <p className="text-xs font-black uppercase tracking-[0.14em] text-emerald-700">Resumo do lote</p>
                             <div className="mt-3 grid grid-cols-2 gap-3">
@@ -747,11 +782,25 @@ export default function BroadcastCobranca() {
                                     Envio concluído
                                 </div>
                                 <p className="text-sm text-slate-600 mt-1">{sendResult.sent} enviada(s) · {sendResult.failed} falha(s)</p>
+                                {sendResult.results?.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                        {Object.entries(sendResult.results.reduce((acc, item) => {
+                                            if (item.status !== 'sent') return acc;
+                                            acc[item.tipoMensagem] = (acc[item.tipoMensagem] || 0) + 1;
+                                            return acc;
+                                        }, {})).map(([type, count]) => (
+                                            <span key={type} className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600 border border-slate-200">
+                                                {MESSAGE_CATEGORY_LABELS[type] || type}: {count}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                                 {sendResult.failed > 0 && (
                                     <div className="mt-3 space-y-1">
                                         {sendResult.results?.filter((item) => item.status === 'failed').map((item) => (
                                             <p key={`${item.index}-${item.celular}`} className="text-xs text-rose-700 flex items-center gap-1">
-                                                <XCircle size={13} /> {item.nome}: {item.errorCode || 'falha no envio'}
+                                                <XCircle size={13} /> {item.nome}
+                                                {item.categorias?.length > 0 && ` (${item.categorias.map((c) => MESSAGE_CATEGORY_LABELS[c] || c).join(', ')})`}: {item.errorCode || 'falha no envio'}
                                             </p>
                                         ))}
                                     </div>

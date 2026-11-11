@@ -165,6 +165,10 @@ export const getWhatsAppQr = (options = {}) =>
 export const reconnectWhatsApp = (options = {}) =>
     api.postData(`${WPP_PREFIX}/session/reconnect`, undefined, withWhatsAppAuth(options));
 
+/** POST /wpp/api/v1/session/logout — Desvincula o aparelho e apaga as credenciais. */
+export const logoutWhatsApp = (options = {}) =>
+    api.postData(`${WPP_PREFIX}/session/logout`, undefined, withWhatsAppAuth(options));
+
 /** POST /wpp/api/v1/messages/send — Envia a cobrança para até 100 clientes. */
 export const sendWhatsAppBilling = (clientes, options = {}) =>
     api.postData(`${WPP_PREFIX}/messages/send`, { clientes }, withWhatsAppAuth(options));

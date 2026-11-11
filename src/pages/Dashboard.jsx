@@ -13,9 +13,14 @@ import VendedorModal from '../components/VendedorModal';
 import { useAuth } from '../hooks/useAuth';
 
 const PAGE_SIZE = 50;
+const OVERDUE_LOOKBACK_DAYS = 365;
 
 const formatCurrency = (value) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
 const formatDate = (value) => value ? new Date(`${value.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR') : '-';
+const toFiniteNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+};
 
 function getStatus(prestacao) {
     if (prestacao.DTBAIXA) return 'Pago';
@@ -39,9 +44,13 @@ export default function Dashboard() {
     // Visão geral
     const [diasPrevisao, setDiasPrevisao] = useState(30);
     const [diasInput, setDiasInput] = useState('30'); // string para o input
-    const [overview, setOverview] = useState([]);
     const [chartBarData, setChartBarData] = useState([]);
-    const [totalReceber, setTotalReceber] = useState(0);
+    const [receivablesSummary, setReceivablesSummary] = useState({
+        overdueValue: 0,
+        overdueCount: 0,
+        upcomingValue: 0,
+        upcomingCount: 0,
+    });
     const [overviewLoading, setOverviewLoading] = useState(true);
 
     // Clientes
@@ -86,25 +95,32 @@ export default function Dashboard() {
             setOverviewLoading(true);
             setError('');
             try {
-                // O backend já agrega o total por dia via /prestacoes/a-vencer/por-dia,
-                // eliminando a necessidade de paginar todas as prestações e somar no cliente.
-                const [porDia, vencidas, aVencerSample] = await Promise.all([
+                // O backend já agrega valores e quantidades futuras por dia. Só as
+                // vencidas precisam ser somadas no cliente, pois não há endpoint agregado.
+                const [porDiaResponse, vencidasResponse] = await Promise.all([
                     apiService.listPrestacoesAVencerPorDia({ dias: diasPrevisao }, { signal: controller.signal }),
-                    apiService.listPrestacoesVencidas({ dias: 30, limit: 200 }, { signal: controller.signal }),
-                    apiService.listPrestacoesAVencer({ dias: diasPrevisao, limit: 200 }, { signal: controller.signal }),
+                    apiService.listPrestacoesVencidas({ dias: OVERDUE_LOOKBACK_DAYS }, { signal: controller.signal }),
                 ]);
                 if (controller.signal.aborted) return;
 
-                // Converte { DTVENC, total, quantidade } → { data, valor } para o gráfico
-                setChartBarData(porDia.map((p) => ({ data: p.DTVENC, valor: Number(p.total || 0) })));
+                const porDia = Array.isArray(porDiaResponse) ? porDiaResponse : [];
+                const vencidas = Array.isArray(vencidasResponse) ? vencidasResponse : [];
+                const normalizedPorDia = porDia.map((item) => ({
+                    data: item.DTVENC,
+                    valor: toFiniteNumber(item.total),
+                    quantidade: Math.max(0, Math.trunc(toFiniteNumber(item.quantidade))),
+                }));
+                const upcomingValue = normalizedPorDia.reduce((sum, item) => sum + item.valor, 0);
+                const upcomingCount = normalizedPorDia.reduce((sum, item) => sum + item.quantidade, 0);
+                const overdueValue = vencidas.reduce((sum, item) => sum + toFiniteNumber(item.VALOR), 0);
 
-                // Pie chart: amostra de vencidas + a-vencer
-                setOverview([...vencidas, ...aVencerSample]);
-
-                // Total a receber exato: agregação do backend + vencidas da amostra
-                const aVencerTotal = porDia.reduce((sum, p) => sum + Number(p.total || 0), 0);
-                const vencidasTotal = vencidas.reduce((sum, p) => sum + Number(p.VALOR || 0), 0);
-                setTotalReceber(aVencerTotal + vencidasTotal);
+                setChartBarData(normalizedPorDia);
+                setReceivablesSummary({
+                    overdueValue,
+                    overdueCount: vencidas.length,
+                    upcomingValue,
+                    upcomingCount,
+                });
             } catch (requestError) {
                 if (requestError.name !== 'AbortError') setError('Não foi possível carregar a visão geral.');
             } finally {
@@ -206,19 +222,20 @@ export default function Dashboard() {
     }, []);
 
     // ── Métricas ──────────────────────────────────────────────────────────────
-    const metrics = overview.reduce((accumulator, prestacao) => {
-        const value = Number(prestacao.VALOR || 0);
-        if (getStatus(prestacao) === 'Vencido') accumulator.totalVencido += value;
-        accumulator.totalPrestacoes += 1;
-        return accumulator;
-    }, { totalVencido: 0, totalPrestacoes: 0 });
-
-    const chartPie = overview.reduce((accumulator, prestacao) => {
-        const value = Number(prestacao.VALOR || 0);
-        const status = getStatus(prestacao);
-        accumulator[status] = (accumulator[status] || 0) + value;
-        return accumulator;
-    }, {});
+    const totalOpen = receivablesSummary.overdueValue + receivablesSummary.upcomingValue;
+    const totalOpenCount = receivablesSummary.overdueCount + receivablesSummary.upcomingCount;
+    const chartPieData = [
+        {
+            name: 'Vencido',
+            value: receivablesSummary.overdueValue,
+            quantidade: receivablesSummary.overdueCount,
+        },
+        {
+            name: 'A vencer',
+            value: receivablesSummary.upcomingValue,
+            quantidade: receivablesSummary.upcomingCount,
+        },
+    ];
 
     // ── Salvar observação ─────────────────────────────────────────────────────
     async function saveObservation(event) {
@@ -433,7 +450,7 @@ export default function Dashboard() {
                     <section className="space-y-6">
                         <div className="flex flex-wrap items-center justify-between gap-4">
                             <p className="text-sm text-slate-500">
-                                Indicadores calculados a partir de até 200 prestações vencidas e a previsão exata dos próximos {diasPrevisao} dias.
+                                Valores vencidos nos últimos {OVERDUE_LOOKBACK_DAYS} dias e previsão exata dos próximos {diasPrevisao} dias.
                             </p>
                             {/* Configuração de dias */}
                             <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-sm">
@@ -463,9 +480,9 @@ export default function Dashboard() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <MetricCard title="A receber" value={formatCurrency(totalReceber)} icon={DollarSign} colorClass="bg-blue-100 text-blue-600" />
-                            <MetricCard title="Total vencido" value={formatCurrency(metrics.totalVencido)} icon={AlertCircle} colorClass="bg-rose-100 text-rose-600" />
-                            <MetricCard title="Prestações na amostra" value={metrics.totalPrestacoes} icon={FileText} colorClass="bg-amber-100 text-amber-600" />
+                            <MetricCard title="Em aberto no período" value={formatCurrency(totalOpen)} icon={DollarSign} colorClass="bg-blue-100 text-blue-600" />
+                            <MetricCard title={`Vencido (${OVERDUE_LOOKBACK_DAYS} dias)`} value={formatCurrency(receivablesSummary.overdueValue)} icon={AlertCircle} colorClass="bg-rose-100 text-rose-600" />
+                            <MetricCard title="Prestações em aberto" value={totalOpenCount} icon={FileText} colorClass="bg-amber-100 text-amber-600" />
                         </div>
 
                         {overviewLoading
@@ -478,7 +495,7 @@ export default function Dashboard() {
                                             data={chartBarData}
                                         />
                                     </div>
-                                    <PieChartStatus data={Object.entries(chartPie).map(([name, value]) => ({ name, value }))} />
+                                    <PieChartStatus data={chartPieData} dias={diasPrevisao} overdueDays={OVERDUE_LOOKBACK_DAYS} />
                                 </div>
                             )
                         }
