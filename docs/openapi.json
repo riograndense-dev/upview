@@ -1098,7 +1098,7 @@
       "get": {
         "tags": ["Prestações"],
         "summary": "Prepara clientes e faturas para o broadcast de cobrança",
-        "description": "Agrupa em uma consulta todas as faturas e telefones para a seleção.",
+        "description": "Filtra e pagina clientes com suas faturas elegíveis para cobrança.",
         "operationId": "get_broadcast_cobranca_prestacoes_broadcast_cobranca_get",
         "security": [{ "OAuth2PasswordBearer": [] }],
         "parameters": [
@@ -1141,6 +1141,111 @@
               "title": "Dias Futuros"
             },
             "description": "Janela posterior a hoje, em dias"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "string", "maxLength": 150 },
+                { "type": "null" }
+              ],
+              "description": "Busca parcial por cliente, CODCLI, CPF/CNPJ, duplicata, prestacao ou codigo de cobranca",
+              "title": "Search"
+            },
+            "description": "Busca parcial por cliente, CODCLI, CPF/CNPJ, duplicata, prestacao ou codigo de cobranca"
+          },
+          {
+            "name": "venc",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "string", "format": "date" },
+                { "type": "null" }
+              ],
+              "description": "Vencimento exato no formato AAAA-MM-DD",
+              "title": "Venc"
+            },
+            "description": "Vencimento exato no formato AAAA-MM-DD"
+          },
+          {
+            "name": "valormin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "number" },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                },
+                { "type": "null" }
+              ],
+              "description": "Valor minimo da fatura",
+              "title": "Valormin"
+            },
+            "description": "Valor minimo da fatura"
+          },
+          {
+            "name": "valormax",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "number" },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                },
+                { "type": "null" }
+              ],
+              "description": "Valor maximo da fatura",
+              "title": "Valormax"
+            },
+            "description": "Valor maximo da fatura"
+          },
+          {
+            "name": "codcob",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "string", "maxLength": 10 },
+                { "type": "null" }
+              ],
+              "description": "Codigo de cobranca exato",
+              "title": "Codcob"
+            },
+            "description": "Codigo de cobranca exato"
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Pagina de clientes",
+              "default": 1,
+              "title": "Pagina"
+            },
+            "description": "Pagina de clientes"
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Quantidade de clientes por pagina",
+              "default": 50,
+              "title": "Limite"
+            },
+            "description": "Quantidade de clientes por pagina"
           }
         ],
         "responses": {
@@ -2171,7 +2276,15 @@
         "responses": {
           "200": {
             "description": "Successful Response",
-            "content": { "application/json": { "schema": {} } }
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MarcaResponse" },
+                  "title": "Response Get Marcas Marca  Get"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -2257,6 +2370,133 @@
         "summary": "Gerar Boleto Sicredi Get",
         "description": "Gera e retorna o PDF de um boleto Sicredi a partir da linha digitável via GET (Requer login).",
         "operationId": "gerar_boleto_sicredi_get_boleto_sicredi_get",
+        "security": [
+          { "OAuth2PasswordBearer": [] },
+          { "PortalOAuth2PasswordBearer": [] }
+        ],
+        "parameters": [
+          {
+            "name": "linha_digitavel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "description": "Linha digitável do boleto",
+              "title": "Linha Digitavel"
+            },
+            "description": "Linha digitável do boleto"
+          },
+          {
+            "name": "linhaDigitavel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "description": "Linha digitável do boleto (camelCase)",
+              "title": "Linhadigitavel"
+            },
+            "description": "Linha digitável do boleto (camelCase)"
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Download"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boleto/banrisul": {
+      "post": {
+        "tags": ["Cobrança - Boletos"],
+        "summary": "Gerar Boleto Banrisul Post",
+        "description": "Gera e retorna o PDF de um boleto Banrisul a partir da linha digitável via POST (Requer login).",
+        "operationId": "gerar_boleto_banrisul_post_boleto_banrisul_post",
+        "security": [
+          { "OAuth2PasswordBearer": [] },
+          { "PortalOAuth2PasswordBearer": [] }
+        ],
+        "parameters": [
+          {
+            "name": "linha_digitavel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Linha Digitavel"
+            }
+          },
+          {
+            "name": "linhaDigitavel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Linhadigitavel"
+            }
+          },
+          {
+            "name": "download",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Download"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  { "$ref": "#/components/schemas/BoletoRequest" },
+                  { "type": "null" }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Cobrança - Boletos"],
+        "summary": "Gerar Boleto Banrisul Get",
+        "description": "Gera e retorna o PDF de um boleto Banrisul a partir da linha digitável via GET (Requer login).",
+        "operationId": "gerar_boleto_banrisul_get_boleto_banrisul_get",
         "security": [
           { "OAuth2PasswordBearer": [] },
           { "PortalOAuth2PasswordBearer": [] }
@@ -3126,6 +3366,978 @@
           }
         }
       }
+    },
+    "/comarcas/resumo": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Resumo",
+        "description": "KPIs do período e do período imediatamente anterior (mesma duração).",
+        "operationId": "resumo_comarcas_resumo_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "codsupervisor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codsupervisor"
+            }
+          },
+          {
+            "name": "codusur",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codusur"
+            }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ResumoResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/marcas/ranking": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Marcas Ranking",
+        "description": "Ranking de marcas por venda.\n\nCom `limite`, a lista é cortada, mas os totais do período completo seguem\nnos headers `X-Total-VLVENDA`, `X-Total-QT` e `X-Total-Marcas`.",
+        "operationId": "marcas_ranking_comarcas_marcas_ranking_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "codsupervisor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codsupervisor"
+            }
+          },
+          {
+            "name": "codusur",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codusur"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "integer", "minimum": 1 },
+                { "type": "null" }
+              ],
+              "description": "Top N marcas",
+              "title": "Limite"
+            },
+            "description": "Top N marcas"
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MarcaRankingItem" },
+                  "title": "Response Marcas Ranking Comarcas Marcas Ranking Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/marcas/{codmarca}/vendedores": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Marca Vendedores",
+        "description": "Vendedores que venderam a marca no período, por `VLVENDA` decrescente.",
+        "operationId": "marca_vendedores_comarcas_marcas__codmarca__vendedores_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codmarca",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Codmarca" }
+          },
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "codsupervisor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codsupervisor"
+            }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MarcaVendedorItem" },
+                  "title": "Response Marca Vendedores Comarcas Marcas  Codmarca  Vendedores Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/vendas/serie": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Vendas Serie",
+        "description": "Série diária (uma linha por dia, inclusive dias sem venda).",
+        "operationId": "vendas_serie_comarcas_vendas_serie_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "codsupervisor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codsupervisor"
+            }
+          },
+          {
+            "name": "codusur",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codusur"
+            }
+          },
+          {
+            "name": "codmarca",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codmarca"
+            }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SerieItem" },
+                  "title": "Response Vendas Serie Comarcas Vendas Serie Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/vendas/serie-por-vendedor": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Vendas Serie Por Vendedor",
+        "description": "Série diária plana (dia × vendedor), somente dias com venda.",
+        "operationId": "vendas_serie_por_vendedor_comarcas_vendas_serie_por_vendedor_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "codsupervisor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codsupervisor"
+            }
+          },
+          {
+            "name": "codmarca",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codmarca"
+            }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/SerieVendedorItem" },
+                  "title": "Response Vendas Serie Por Vendedor Comarcas Vendas Serie Por Vendedor Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/vendedores/ranking": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Vendedores Ranking",
+        "description": "Base da pontuação/bonificação: todos os vendedores em uma consulta.",
+        "operationId": "vendedores_ranking_comarcas_vendedores_ranking_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "codsupervisor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codsupervisor"
+            }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VendedoresRankingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/vendedores/{codusur}/marcas": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Vendedor Marcas",
+        "description": "Mix de marcas vendidas por um vendedor (apenas marcas com venda).",
+        "operationId": "vendedor_marcas_comarcas_vendedores__codusur__marcas_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codusur",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Codusur" }
+          },
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/VendedorMarcaItem" },
+                  "title": "Response Vendedor Marcas Comarcas Vendedores  Codusur  Marcas Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/vendedores/{codusur}/produtos": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Vendedor Produtos",
+        "description": "Produtos mais vendidos do vendedor (limitado no banco).",
+        "operationId": "vendedor_produtos_comarcas_vendedores__codusur__produtos_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codusur",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Codusur" }
+          },
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "codmarca",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codmarca"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VendedorProdutoItem"
+                  },
+                  "title": "Response Vendedor Produtos Comarcas Vendedores  Codusur  Produtos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/vendedores/{codusur}/cobertura": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Vendedor Cobertura",
+        "description": "Cobertura da carteira: total, positivados no período e inativos.",
+        "operationId": "vendedor_cobertura_comarcas_vendedores__codusur__cobertura_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codusur",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Codusur" }
+          },
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CoberturaResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/vendedores/{codusur}/clientes-sem-compra": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Vendedor Clientes Sem Compra",
+        "description": "Clientes da carteira sem compra no período (paginado).",
+        "operationId": "vendedor_clientes_sem_compra_comarcas_vendedores__codusur__clientes_sem_compra_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codusur",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Codusur" }
+          },
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Pagina"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limite"
+            }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClienteSemCompraItem"
+                  },
+                  "title": "Response Vendedor Clientes Sem Compra Comarcas Vendedores  Codusur  Clientes Sem Compra Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/matriz": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Matriz",
+        "description": "Matriz vendedor × marca (formato plano, sem linhas zeradas).",
+        "operationId": "matriz_comarcas_matriz_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "codsupervisor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codsupervisor"
+            }
+          },
+          {
+            "name": "topmarcas",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 15,
+              "title": "Topmarcas"
+            }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MatrizItem" },
+                  "title": "Response Matriz Comarcas Matriz Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/comarcas/dashboard": {
+      "get": {
+        "tags": ["Comarcas"],
+        "summary": "Dashboard",
+        "description": "Resumo + top 10 marcas + série + ranking de vendedores em uma resposta.",
+        "operationId": "dashboard_comarcas_dashboard_get",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "codfilial",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 1, "title": "Codfilial" }
+          },
+          {
+            "name": "codsupervisor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codsupervisor"
+            }
+          },
+          {
+            "name": "codusur",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "integer" }, { "type": "null" }],
+              "title": "Codusur"
+            }
+          },
+          {
+            "name": "datai",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data inicial (inclusiva)",
+              "title": "Datai"
+            },
+            "description": "Data inicial (inclusiva)"
+          },
+          {
+            "name": "dataf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "description": "Data final (inclusiva)",
+              "title": "Dataf"
+            },
+            "description": "Data final (inclusiva)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DashboardResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3173,6 +4385,15 @@
       },
       "BroadcastCobrancaFatura": {
         "properties": {
+          "duplic": { "type": "integer", "title": "Duplic" },
+          "prest": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Prest"
+          },
+          "codcob": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Codcob"
+          },
           "dataVencimento": {
             "type": "string",
             "format": "date",
@@ -3185,7 +4406,7 @@
           }
         },
         "type": "object",
-        "required": ["dataVencimento", "valor"],
+        "required": ["duplic", "dataVencimento", "valor"],
         "title": "BroadcastCobrancaFatura"
       },
       "BroadcastCobrancaResponse": {
@@ -3202,18 +4423,44 @@
             "type": "array",
             "title": "Clientes"
           },
-          "totalClientes": { "type": "integer", "title": "Totalclientes" },
+          "pagina": { "type": "integer", "minimum": 1.0, "title": "Pagina" },
+          "limite": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limite"
+          },
+          "totalClientes": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Totalclientes"
+          },
+          "totalPaginas": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Totalpaginas"
+          },
           "totalComTelefone": {
             "type": "integer",
-            "title": "Totalcomtelefone"
+            "minimum": 0.0,
+            "title": "Totalcomtelefone",
+            "description": "Clientes com telefone valido presentes nesta pagina"
           },
-          "totalSemTelefone": { "type": "integer", "title": "Totalsemtelefone" }
+          "totalSemTelefone": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Totalsemtelefone",
+            "description": "Clientes sem telefone valido presentes nesta pagina"
+          }
         },
         "type": "object",
         "required": [
           "geradoEm",
           "clientes",
+          "pagina",
+          "limite",
           "totalClientes",
+          "totalPaginas",
           "totalComTelefone",
           "totalSemTelefone"
         ],
@@ -3223,15 +4470,26 @@
             {
               "celular": "5551999999999",
               "codcli": 123,
-              "faturas": [{ "dataVencimento": "2026-10-16", "valor": 149.9 }],
+              "faturas": [
+                {
+                  "codcob": "001",
+                  "dataVencimento": "2026-10-16",
+                  "duplic": 123456,
+                  "prest": "01",
+                  "valor": 149.9
+                }
+              ],
               "nome": "Cliente Exemplo",
               "telefoneOriginal": "(51) 99999-9999",
               "telefoneValido": true
             }
           ],
           "geradoEm": "2026-10-16T14:30:00-03:00",
+          "limite": 50,
+          "pagina": 1,
           "totalClientes": 1,
           "totalComTelefone": 1,
+          "totalPaginas": 1,
           "totalSemTelefone": 0
         }
       },
@@ -3514,6 +4772,37 @@
         "required": ["ID", "CODCLI", "NUMDOC", "NOME", "PERMISSAO"],
         "title": "ClienteResponseCrud"
       },
+      "ClienteSemCompraItem": {
+        "properties": {
+          "CODCLI": { "type": "integer", "title": "Codcli" },
+          "CLIENTE": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Cliente"
+          },
+          "MUNICENT": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Municent"
+          },
+          "TELENT": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Telent"
+          },
+          "ULTIMACOMPRA": {
+            "anyOf": [
+              { "type": "string", "format": "date" },
+              { "type": "null" }
+            ],
+            "title": "Ultimacompra"
+          },
+          "VLULTIMACOMPRA": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Vlultimacompra"
+          }
+        },
+        "type": "object",
+        "required": ["CODCLI"],
+        "title": "ClienteSemCompraItem"
+      },
       "ClienteSituacaoResponse": {
         "properties": {
           "status": {
@@ -3603,6 +4892,16 @@
         "required": ["pagina", "limite", "total", "total_paginas"],
         "title": "ClientesInativadosPaginadosResponse"
       },
+      "CoberturaResponse": {
+        "properties": {
+          "QTCARTEIRA": { "type": "integer", "title": "Qtcarteira" },
+          "QTPOSITIVADOS": { "type": "integer", "title": "Qtpositivados" },
+          "QTINATIVOS": { "type": "integer", "title": "Qtinativos" }
+        },
+        "type": "object",
+        "required": ["QTCARTEIRA", "QTPOSITIVADOS", "QTINATIVOS"],
+        "title": "CoberturaResponse"
+      },
       "ContactForm": {
         "properties": {
           "nome": {
@@ -3640,6 +4939,27 @@
           "mensagem"
         ],
         "title": "ContactForm"
+      },
+      "DashboardResponse": {
+        "properties": {
+          "resumo": { "$ref": "#/components/schemas/ResumoResponse" },
+          "marcas": {
+            "items": { "$ref": "#/components/schemas/MarcaRankingItem" },
+            "type": "array",
+            "title": "Marcas"
+          },
+          "serie": {
+            "items": { "$ref": "#/components/schemas/SerieItem" },
+            "type": "array",
+            "title": "Serie"
+          },
+          "vendedores": {
+            "$ref": "#/components/schemas/VendedoresRankingResponse"
+          }
+        },
+        "type": "object",
+        "required": ["resumo", "marcas", "serie", "vendedores"],
+        "title": "DashboardResponse"
       },
       "FuncionarioCreate": {
         "properties": {
@@ -3820,6 +5140,102 @@
           "quantidade_clientes_inativos"
         ],
         "title": "MapaPracaResponse"
+      },
+      "MarcaRankingItem": {
+        "properties": {
+          "CODMARCA": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Codmarca"
+          },
+          "MARCA": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Marca"
+          },
+          "VLVENDA": { "type": "number", "title": "Vlvenda" },
+          "QT": { "type": "number", "title": "Qt" },
+          "QTCLI": { "type": "integer", "title": "Qtcli" },
+          "QTPROD": { "type": "integer", "title": "Qtprod" },
+          "QTVENDEDORES": { "type": "integer", "title": "Qtvendedores" }
+        },
+        "type": "object",
+        "required": ["VLVENDA", "QT", "QTCLI", "QTPROD", "QTVENDEDORES"],
+        "title": "MarcaRankingItem",
+        "example": {
+          "CODMARCA": 12,
+          "MARCA": "NESTLÉ",
+          "QT": 8120,
+          "QTCLI": 310,
+          "QTPROD": 42,
+          "QTVENDEDORES": 9,
+          "VLVENDA": 210450.1
+        }
+      },
+      "MarcaResponse": {
+        "properties": {
+          "CODMARCA": { "type": "integer", "title": "Codmarca" },
+          "MARCA": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Marca"
+          }
+        },
+        "type": "object",
+        "required": ["CODMARCA"],
+        "title": "MarcaResponse"
+      },
+      "MarcaVendedorItem": {
+        "properties": {
+          "CODUSUR": { "type": "integer", "title": "Codusur" },
+          "NOME": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Nome"
+          },
+          "VLVENDA": { "type": "number", "title": "Vlvenda" },
+          "QT": { "type": "number", "title": "Qt" },
+          "QTCLI": { "type": "integer", "title": "Qtcli" },
+          "QTPROD": { "type": "integer", "title": "Qtprod" },
+          "QTCARTEIRA": { "type": "integer", "title": "Qtcarteira" }
+        },
+        "type": "object",
+        "required": [
+          "CODUSUR",
+          "VLVENDA",
+          "QT",
+          "QTCLI",
+          "QTPROD",
+          "QTCARTEIRA"
+        ],
+        "title": "MarcaVendedorItem",
+        "example": {
+          "CODUSUR": 7,
+          "NOME": "FULANO",
+          "QT": 810,
+          "QTCARTEIRA": 130,
+          "QTCLI": 44,
+          "QTPROD": 9,
+          "VLVENDA": 20450.1
+        }
+      },
+      "MatrizItem": {
+        "properties": {
+          "CODUSUR": { "type": "integer", "title": "Codusur" },
+          "NOME": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Nome"
+          },
+          "CODMARCA": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Codmarca"
+          },
+          "MARCA": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Marca"
+          },
+          "VLVENDA": { "type": "number", "title": "Vlvenda" },
+          "QTCLI": { "type": "integer", "title": "Qtcli" }
+        },
+        "type": "object",
+        "required": ["CODUSUR", "VLVENDA", "QTCLI"],
+        "title": "MatrizItem"
       },
       "MessageResponse": {
         "properties": { "message": { "type": "string", "title": "Message" } },
@@ -4071,6 +5487,10 @@
           "url_boleto": {
             "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Url Boleto"
+          },
+          "boleto_pdf": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Boleto Pdf"
           }
         },
         "type": "object",
@@ -4088,6 +5508,106 @@
         },
         "type": "object",
         "title": "RefreshTokenRequest"
+      },
+      "ResumoPeriodo": {
+        "properties": {
+          "VLVENDA": { "type": "number", "title": "Vlvenda", "default": 0 },
+          "QT": { "type": "number", "title": "Qt", "default": 0 },
+          "TOTPESO": { "type": "number", "title": "Totpeso", "default": 0 },
+          "QTPEDIDOS": {
+            "type": "integer",
+            "title": "Qtpedidos",
+            "default": 0
+          },
+          "QTCLIATENDIDOS": {
+            "type": "integer",
+            "title": "Qtcliatendidos",
+            "default": 0
+          },
+          "QTCARTEIRA": {
+            "type": "integer",
+            "title": "Qtcarteira",
+            "default": 0
+          },
+          "QTMARCAS": { "type": "integer", "title": "Qtmarcas", "default": 0 },
+          "QTPRODUTOS": {
+            "type": "integer",
+            "title": "Qtprodutos",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "ResumoPeriodo"
+      },
+      "ResumoResponse": {
+        "properties": {
+          "atual": { "$ref": "#/components/schemas/ResumoPeriodo" },
+          "anterior": { "$ref": "#/components/schemas/ResumoPeriodo" }
+        },
+        "type": "object",
+        "required": ["atual", "anterior"],
+        "title": "ResumoResponse",
+        "example": {
+          "anterior": {
+            "QT": 45000,
+            "QTCARTEIRA": 910,
+            "QTCLIATENDIDOS": 610,
+            "QTMARCAS": 72,
+            "QTPEDIDOS": 2200,
+            "QTPRODUTOS": 1250,
+            "TOTPESO": 85000.0,
+            "VLVENDA": 1400000.0
+          },
+          "atual": {
+            "QT": 48210,
+            "QTCARTEIRA": 910,
+            "QTCLIATENDIDOS": 640,
+            "QTMARCAS": 74,
+            "QTPEDIDOS": 2310,
+            "QTPRODUTOS": 1280,
+            "TOTPESO": 90311.4,
+            "VLVENDA": 1520340.55
+          }
+        }
+      },
+      "SerieItem": {
+        "properties": {
+          "DATA": { "type": "string", "format": "date", "title": "Data" },
+          "VLVENDA": { "type": "number", "title": "Vlvenda" },
+          "QT": { "type": "number", "title": "Qt" },
+          "QTPEDIDOS": { "type": "integer", "title": "Qtpedidos" },
+          "QTCLI": { "type": "integer", "title": "Qtcli" }
+        },
+        "type": "object",
+        "required": ["DATA", "VLVENDA", "QT", "QTPEDIDOS", "QTCLI"],
+        "title": "SerieItem",
+        "example": {
+          "DATA": "2026-11-03",
+          "QT": 1720,
+          "QTCLI": 74,
+          "QTPEDIDOS": 88,
+          "VLVENDA": 51200.4
+        }
+      },
+      "SerieVendedorItem": {
+        "properties": {
+          "DATA": { "type": "string", "format": "date", "title": "Data" },
+          "CODUSUR": { "type": "integer", "title": "Codusur" },
+          "NOME": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Nome"
+          },
+          "VLVENDA": { "type": "number", "title": "Vlvenda" }
+        },
+        "type": "object",
+        "required": ["DATA", "CODUSUR", "VLVENDA"],
+        "title": "SerieVendedorItem",
+        "example": {
+          "CODUSUR": 7,
+          "DATA": "2026-11-03",
+          "NOME": "FULANO",
+          "VLVENDA": 5120.4
+        }
       },
       "SupervisorResponse": {
         "properties": {
@@ -4266,6 +5786,100 @@
         "required": ["CODUSUR", "NOME"],
         "title": "VendedorCreate"
       },
+      "VendedorMarcaItem": {
+        "properties": {
+          "CODMARCA": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Codmarca"
+          },
+          "MARCA": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Marca"
+          },
+          "VLVENDA": { "type": "number", "title": "Vlvenda" },
+          "QT": { "type": "number", "title": "Qt" },
+          "QTCLI": { "type": "integer", "title": "Qtcli" },
+          "QTPROD": { "type": "integer", "title": "Qtprod" },
+          "ULTIMAVENDA": {
+            "anyOf": [
+              { "type": "string", "format": "date" },
+              { "type": "null" }
+            ],
+            "title": "Ultimavenda"
+          }
+        },
+        "type": "object",
+        "required": ["VLVENDA", "QT", "QTCLI", "QTPROD"],
+        "title": "VendedorMarcaItem"
+      },
+      "VendedorProdutoItem": {
+        "properties": {
+          "CODPROD": { "type": "integer", "title": "Codprod" },
+          "DESCRICAO": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Descricao"
+          },
+          "CODMARCA": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Codmarca"
+          },
+          "MARCA": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Marca"
+          },
+          "VLVENDA": { "type": "number", "title": "Vlvenda" },
+          "QT": { "type": "number", "title": "Qt" },
+          "QTCLI": { "type": "integer", "title": "Qtcli" }
+        },
+        "type": "object",
+        "required": ["CODPROD", "VLVENDA", "QT", "QTCLI"],
+        "title": "VendedorProdutoItem",
+        "example": {
+          "CODMARCA": 12,
+          "CODPROD": 1021,
+          "DESCRICAO": "ARROZ TIO JOAO 5KG",
+          "MARCA": "TIO JOÃO",
+          "QT": 310,
+          "QTCLI": 38,
+          "VLVENDA": 8120.5
+        }
+      },
+      "VendedorRankingItem": {
+        "properties": {
+          "CODUSUR": { "type": "integer", "title": "Codusur" },
+          "NOME": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Nome"
+          },
+          "CODSUPERVISOR": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Codsupervisor"
+          },
+          "VLVENDA": { "type": "number", "title": "Vlvenda" },
+          "QT": { "type": "number", "title": "Qt" },
+          "TOTPESO": { "type": "number", "title": "Totpeso" },
+          "QTPEDIDOS": { "type": "integer", "title": "Qtpedidos" },
+          "QTCLIATENDIDOS": { "type": "integer", "title": "Qtcliatendidos" },
+          "QTCARTEIRA": { "type": "integer", "title": "Qtcarteira" },
+          "QTMARCAS": { "type": "integer", "title": "Qtmarcas" },
+          "QTPRODUTOS": { "type": "integer", "title": "Qtprodutos" },
+          "META": { "type": "number", "title": "Meta" }
+        },
+        "type": "object",
+        "required": [
+          "CODUSUR",
+          "VLVENDA",
+          "QT",
+          "TOTPESO",
+          "QTPEDIDOS",
+          "QTCLIATENDIDOS",
+          "QTCARTEIRA",
+          "QTMARCAS",
+          "QTPRODUTOS",
+          "META"
+        ],
+        "title": "VendedorRankingItem"
+      },
       "VendedorResponse": {
         "properties": {
           "CODUSUR": { "type": "integer", "title": "Codusur" },
@@ -4313,6 +5927,23 @@
         "type": "object",
         "title": "VendedorUpdate"
       },
+      "VendedoresRankingResponse": {
+        "properties": {
+          "QTMARCAS_TOTAL": { "type": "integer", "title": "Qtmarcas Total" },
+          "QTPRODUTOS_TOTAL": {
+            "type": "integer",
+            "title": "Qtprodutos Total"
+          },
+          "vendedores": {
+            "items": { "$ref": "#/components/schemas/VendedorRankingItem" },
+            "type": "array",
+            "title": "Vendedores"
+          }
+        },
+        "type": "object",
+        "required": ["QTMARCAS_TOTAL", "QTPRODUTOS_TOTAL", "vendedores"],
+        "title": "VendedoresRankingResponse"
+      },
       "WppCobrancaCliente": {
         "properties": {
           "nome": { "type": "string", "minLength": 1, "title": "Nome" },
@@ -4325,7 +5956,7 @@
             "description": "Telefone contendo somente de 10 a 15 dígitos"
           },
           "faturas": {
-            "items": { "$ref": "#/components/schemas/BroadcastCobrancaFatura" },
+            "items": { "$ref": "#/components/schemas/WppCobrancaFatura" },
             "type": "array",
             "minItems": 1,
             "title": "Faturas"
@@ -4334,6 +5965,23 @@
         "type": "object",
         "required": ["nome", "celular", "faturas"],
         "title": "WppCobrancaCliente"
+      },
+      "WppCobrancaFatura": {
+        "properties": {
+          "dataVencimento": {
+            "type": "string",
+            "format": "date",
+            "title": "Datavencimento"
+          },
+          "valor": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "required": ["dataVencimento", "valor"],
+        "title": "WppCobrancaFatura"
       },
       "WppCobrancaRequest": {
         "properties": {

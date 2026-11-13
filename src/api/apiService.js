@@ -149,6 +149,10 @@ export const updatePrestacaoObservacao = (duplic, observacao, prest = null, opti
 export const getBoletoSicredi = (linhaDigitavel, options = {}) =>
     api.getBlob("/boleto/sicredi", { linha_digitavel: linhaDigitavel, download: true }, options);
 
+/** GET /boleto/banrisul — Gera o PDF de um boleto Banrisul pela linha digitável. */
+export const getBoletoBanrisul = (linhaDigitavel, options = {}) =>
+    api.getBlob("/boleto/banrisul", { linha_digitavel: linhaDigitavel, download: true }, options);
+
 // ── WhatsApp ─────────────────────────────────────────────────────────
 
 const WPP_PREFIX = "/wpp/api/v1";

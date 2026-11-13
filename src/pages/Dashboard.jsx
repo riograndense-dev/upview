@@ -3,7 +3,7 @@ import { AlertCircle, ArrowDownWideNarrow, ArrowUpNarrowWide, BarChart3, Calenda
 
 import * as apiService from '../api/apiService';
 import { BarChartVencimentos, PieChartStatus } from '../components/Charts';
-import BoletoDownloadButton from '../components/BoletoDownloadButton';
+import BoletoDownloadButton, { hasBoleto } from '../components/BoletoDownloadButton';
 import BroadcastCobranca from '../components/BroadcastCobranca';
 import ClientModal from '../components/ClientModal';
 import DataTable from '../components/DataTable';
@@ -383,7 +383,7 @@ export default function Dashboard() {
             align: 'center',
             className: 'whitespace-nowrap text-center',
             render: (row) => (
-                String(row.CODCOB ?? '').trim() === '748'
+                hasBoleto(row)
                     ? <BoletoDownloadButton prestacao={row} compact onError={setError} />
                     : <span className="text-slate-400">—</span>
             ),

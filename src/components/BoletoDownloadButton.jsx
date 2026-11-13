@@ -1,9 +1,19 @@
 import { useState } from 'react';
 import { AlertCircle, Download, LoaderCircle } from 'lucide-react';
 
-import { getBoletoSicredi } from '../api/apiService';
+import { getBoletoBanrisul, getBoletoSicredi } from '../api/apiService';
 
-const isSicredi = (prestacao) => String(prestacao?.CODCOB ?? '').trim() === '748';
+const BANCOS_BOLETO = {
+    '748': { nome: 'Sicredi', download: getBoletoSicredi },
+    '041': { nome: 'Banrisul', download: getBoletoBanrisul },
+};
+
+export const getBancoBoleto = (prestacao) => {
+    const codcob = String(prestacao?.CODCOB ?? prestacao?.codcob ?? '').trim();
+    return BANCOS_BOLETO[codcob] || BANCOS_BOLETO[codcob.padStart(3, '0')] || null;
+};
+
+export const hasBoleto = (prestacao) => Boolean(getBancoBoleto(prestacao));
 
 function getFilename(contentDisposition, fallback) {
     const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
@@ -23,7 +33,8 @@ export default function BoletoDownloadButton({ prestacao, compact = false, onErr
     const [loading, setLoading] = useState(false);
     const [localError, setLocalError] = useState('');
 
-    if (!isSicredi(prestacao)) return null;
+    const banco = getBancoBoleto(prestacao);
+    if (!banco) return null;
 
     const linhaDigitavel = prestacao.LINHADIG || prestacao.linhaDigitavel;
     const unavailable = !linhaDigitavel;
@@ -35,7 +46,7 @@ export default function BoletoDownloadButton({ prestacao, compact = false, onErr
         setLoading(true);
         setLocalError('');
         try {
-            const { blob, contentDisposition } = await getBoletoSicredi(linhaDigitavel);
+            const { blob, contentDisposition } = await banco.download(linhaDigitavel);
             const fallback = `boleto-${prestacao.DUPLIC}${prestacao.PREST ? `-${prestacao.PREST}` : ''}.pdf`;
             const objectUrl = URL.createObjectURL(blob);
             const anchor = document.createElement('a');
@@ -56,7 +67,7 @@ export default function BoletoDownloadButton({ prestacao, compact = false, onErr
 
     const title = unavailable
         ? 'A linha digitável não está disponível para esta prestação.'
-        : localError || 'Baixar boleto Sicredi em PDF';
+        : localError || `Baixar boleto ${banco.nome} em PDF`;
 
     return (
         <div className={compact ? 'inline-flex' : 'flex flex-col items-end gap-1'}>
